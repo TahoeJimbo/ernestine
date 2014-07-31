@@ -2,9 +2,9 @@
 
 ----- DISPATCH ARGUMENTS -------------------------------------------------------
 
-function process_dialplan()
+function process_dialplan_inbound()
    if (#arg ~= 3) then
-      logError("process_dialplan(): Wrong number of arguments.");
+      logError("Wrong number of arguments.");
       return;
    end
 
@@ -13,7 +13,23 @@ function process_dialplan()
 
    logError("Starting dialplan: Extension "..extension
 	    ..", Context: "..context);
-   dialplan_entrypoint(session, context, extension);
+   dialplan_entrypoint_inbound(session, context, extension);
+   logError("Finishing dialplan: Extension "..extension
+	    ..", Context: "..context);
+end
+
+function process_dialplan_outbound()
+   if (#arg ~= 3) then
+      logError("Wrong number of arguments.");
+      return;
+   end
+
+   local extension = arg[2];
+   local context = arg[3];
+
+   logError("Starting dialplan: Extension "..extension
+	    ..", Context: "..context);
+   dialplan_entrypoint_outbound(session, context, extension);
    logError("Finishing dialplan: Extension "..extension
 	    ..", Context: "..context);
 end
@@ -127,8 +143,10 @@ end
 
 location.load();
 
-if (arg[1] == "DIALPLAN") then
-   process_dialplan();
+if (arg[1] == "DIALPLAN-IN") then
+   process_dialplan_inbound()
+elseif (arg[1] == "DIALPLAN-OUT") then
+   process_dialplan_outbound()
 elseif (arg[1] == "VM_RECORD") then
    process_vm_record();
 elseif (arg[1] == "VM_MENU") then

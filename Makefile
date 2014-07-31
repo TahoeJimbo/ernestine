@@ -14,6 +14,7 @@ CORE_LIBS = CONFIGURATION.lua \
 	    utilities_execute.lua \
 	    utilities_dialplan.lua \
 	    utilities_dialplan_private.lua \
+	    utilities_sounds.lua \
 	    utilities_tables.lua \
 	    utilities_recite.lua \
 	    utilities_ivr.lua
@@ -44,6 +45,7 @@ INSITU_TEST_SRC = test_record_menu.lua \
 		  test_198.lua \
 		  test_197.lua \
 		  test_196.lua \
+		  test_195.lua
 #
 # APPLICATIONS
 #
@@ -103,6 +105,7 @@ dispatch:
 	@rm -f $(INSTALL_DIR)/dispatch
 	@luac -o dispatch $(DISPATCH_APP)
 	@cp dispatch $(INSTALL_DIR)
+	@cp dialplan_config.txt $(INSTALL_DIR)
 
 
 # Stand-alone dispatch using compatibility shim for testing.

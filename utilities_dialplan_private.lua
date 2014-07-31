@@ -60,7 +60,51 @@ function dialplan_private.merge_variables(global_variables, local_variables)
       end   
    end
 
-   return merged_variables, count
+   local sorted_variable_names = {}
+
+   for item in pairs(merged_variables) do sorted_variable_names[#sorted_variable_names + 1] = item; end
+   table.sort(sorted_variable_names)
+
+   local merged_variable_string = "";
+   local argument_count = 0;
+
+   if (count ~= 0) then
+      merged_variable_string = "[";
+      
+      for _, key in ipairs(sorted_variable_names) do
+	 merged_variable_string = merged_variable_string..key.."="..merged_variables[key];
+	 argument_count = argument_count + 1
+	 if (argument_count ~= count) then
+	    merged_variable_string = merged_variable_string..",";
+	 end
+      end
+      
+      merged_variable_string = merged_variable_string.."]";
+   end
+
+   return merged_variable_string
+end
+
+function process_singleton_extension_part(singleton, global_variables)
+
+   if string.match(singleton, "=") then
+      dialplan_private.process_variable(singleton, global_variables);
+      return "GL";
+   end
+
+
+   local func, arg;
+
+   func, arg = string.match(singleton,"^(.+)%((.+)%)$");
+
+   if (func) then                       -- we only support single argument functions
+      global_variables._FUNCTION_NAME = func        -- at the moment
+      global_variables._FUNCTION_ARG_COUNT = 1
+      global_variables._0 = arg
+      return "FU";
+   end
+
+   return nil
 end
 
 -- 
@@ -76,33 +120,27 @@ end
 -- For example: wait=60,8001 returns
 -- "8001" and vars.call_timeout = 60   (wait is translated into freeswitch's call_timeout)
 
-function dialplan_private.processExtension(extension, global_variables, excludeExtension)
+function dialplan_private.process_extension(extension, global_variables,
+					    excluded_extension, default_domain)
 
    local parts = {};
    local part;
 
-   -- An extension with only one = and no ","'s is a global assignment.
+   default_domain = default_domain or ""
+
+   if DEBUG then logInfo("Processing <"..extension.."> excluding <"..excluded_extension
+			    .."> in domain <"..default_domain..">"); end
+
+   -- Split the extension into fragments
 
    parts = string_split(extension, ",");
 
    if (#parts == 1) then
-      -- Only one part.  Maybe a global?
+      -- Only one part.  Could be a global or a function
 
-      if (string.match(parts[1],"=")) then
-	 dialplan_private.process_variable(parts[1], global_variables);
-	 return "GL";
-      end
+      local result = process_singleton_extension_part(parts[1], global_variables)
 
-      local func, arg;
-
-      func, arg = string.match(parts[1],"^(.+)%((.+)%)$");
-
-      if (func) then                       -- we only support single argument functions
-	 global_variables._FUNCTION_NAME = func        -- at the moment
-	 global_variables._FUNCTION_ARG_COUNT = 1
-	 global_variables._0 = arg
-	 return "FU";
-      end
+      if result then return result; end
    end
 
    -- NOT a global variable or function, so process away!
@@ -110,13 +148,13 @@ function dialplan_private.processExtension(extension, global_variables, excludeE
    local local_variables = {};
    local_variables.hangup_after_bridge = "true";
 
-   local extensionDigits = "";
+   local extension_digits = "";
 
    for _,part in ipairs(parts) do
       if (string.match(part,"=")) then
 	 dialplan_private.process_variable(part, local_variables);
       else
-	 extensionDigits = part;
+	 extension_digits = part;
       end
    end
 
@@ -125,7 +163,7 @@ function dialplan_private.processExtension(extension, global_variables, excludeE
    -- the extension of the person calling, in case they're in the
    -- list of extensions to try.  
    --
-   if (extensionDigits == excludeExtension) then
+   if (extension_digits == excluded_extension) then
       return "";
    end
 
@@ -133,46 +171,40 @@ function dialplan_private.processExtension(extension, global_variables, excludeE
    -- Merge the global and local variables
    --
 
-   local merged_variables, merged_variable_count  = dialplan_private.merge_variables(global_variables, local_variables)
+   local merged_variable_string = dialplan_private.merge_variables(global_variables, local_variables)
 
-   --
-   -- Sort the varables so they remain deterministic between runs.
-   -- (Turns out that this can be a big deal.)
-   --
-  
-   local sorted_variable_names = {}
-
-   for item in pairs(merged_variables) do sorted_variable_names[#sorted_variable_names + 1] = item; end
-   table.sort(sorted_variable_names)
-
-   local merged_variable_string = "";
-   local argument_count = 0;
-
-   if (merged_variable_count ~= 0) then
-      merged_variable_string = "[";
-      
-      for _, key in ipairs(sorted_variable_names) do
-	 merged_variable_string = merged_variable_string..key.."="..merged_variables[key];
-	 argument_count = argument_count + 1
-	 if (argument_count ~= merged_variable_count) then
-	    merged_variable_string = merged_variable_string..",";
-	 end
+   -- If the extension digits have an @ or % sign in them, don't add the default domian.
+   
+   if default_domain ~= "" then 
+      ext, domain  = string.match(extension_digits,"^(.+)[%%@](.+)$")
+      if (ext == nil) then
+	 -- no @ or %.  Tack on default domain.
+	 
+	 extension_digits = extension_digits.."@"..default_domain
+      else
+	 --
+	 -- Check the separated digits to see if they might be excluded...
+	 --
+	 if ext == excluded_extension then
+	    return ""
+	 end;
       end
-      
-      merged_variable_string = merged_variable_string.."]";
    end
 
-
-   return merged_variable_string.."User/"..extensionDigits;
+   return merged_variable_string.."User/"..extension_digits;
 end
 
-function dialplan_private.processBlock(block, vars, excludeExtension)
+--
+-- Process a block of the dialstrng
+--
+
+function dialplan_private.process_block(block, global_variables, excluded_extension, default_domain)
 
 -- 1. Break the block into : separated extensions
 -- 2. Process the : separated units.
 
    if (DEBUG) then
-      logInfo("Processing <"..block..">, exluding <"..excludeExtension..">");
+      logInfo("Processing <"..block..">, exluding <"..excluded_extension..">");
    end
 
    local extensions = {};
@@ -182,10 +214,10 @@ function dialplan_private.processBlock(block, vars, excludeExtension)
    extensions = string_split(block, ":");
 
    for _,extension in ipairs(extensions) do
-      if (DEBUG) then logInfo("Processing <"..extension..">"); end
+      if (DEBUG) then logInfo("Processing extension <"..extension..">"); end
 
-      local dialStringPart = dialplan_private.processExtension(extension, vars,
-							 excludeExtension);
+      local dialStringPart = dialplan_private.process_extension(extension, global_variables,
+							        excluded_extension, default_domain);
       if (dialStringPart ~= "") then
 
 	 if (dialString ~= "") then

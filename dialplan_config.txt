@@ -1,0 +1,94 @@
+
+-- Jim's do-not-disturb hours
+
+HOUR_BED  = 21;  -- 10pm
+HOUR_WAKE = 10;  --  9am
+
+--
+-- Caller ID of last resort.  Used when the outbound dialplan can't figure
+-- what number to send.
+--
+
+CALLER_ID_NAME_LAST_RESORT = "Jim Hayes"
+CALLER_ID_NUMBER_LAST_RESORT = "5305231043"
+
+LOCAL_AREA_CODE = "530"
+
+
+----------EXTENSION DEFINITIONS-----------
+
+-- A fully qualified extension looks like this:  (** = required)
+--
+-- Extension{
+--   ** id = "sip_user_part"               
+--      domain = "dip_domain_port"
+--   ** dialstring = "dialstring pattern" 
+--      external_caller_id_name = "Person's Name"
+--      external_caller_id_number = "Number send to PSTN on outbound calls"
+--      many_handsets = true/false [Indicates that one number rings many phones,
+--                      so calls from that number are INCLUDED when hunting so
+--                      the other phones have a chance to ring.
+-- }
+--
+-- Any field omitted by the dialplan can use default values provided in:
+--
+--   default_domian
+--   default_external_caller_id_name
+--   default_external_caller_id_number
+--
+-- which can be changed in-line, resulting in less typing and a clearer
+-- dialplan.
+
+default_domain = "10.11.0.3"
+
+default_external_caller_id_name = "Jim Hayes"
+default_external_caller_id_number = "5305231043"
+default_many_handsets = false
+
+-- Hunt groups, called from the dialplan_inbound.lua script.
+
+Extension{ id = "JimTahoe",     dialstring = "wait=30|8001:8003:4001|VM(546)"   }    -- At the lake hunt group
+Extension{ id = "JimScruz",     dialstring = "wait=30:4001|VM(546)"        }    -- In santa cruz hunt group
+Extension{ id = "JimOutside",   dialstring = "wait=30:4001|VM(546)"        }    -- Out and about hunt group
+
+Extension{ id = "JimWakeTahoe", dialstring = "wait=30|8001:4001|VM(546)"   }    -- At the lake emergency
+Extension{ id = "JimWakeScruz", dialstring = "wait=30:7001|VM(546)"        }    -- In santa cruz emergency
+
+Extension{ id = "JimDirectVM",  dialstring = "VM(546)"                     }    -- Direct to voicemail
+
+-- Extensions (Tahoe)
+
+Extension{ id = "8000", dialstring = "wait=120|8001:8002:8003:8004:8010"   }    -- Tahoe everything.
+Extension{ id = "8001", dialstring = "wait=120|8001", many_handsets = true }    -- Tahoe DECT phones
+Extension{ id = "8002", dialstring = "wait=120|8002"                       }    -- Tahoe Snom Basement
+Extension{ id = "8003", dialstring = "wait=120|8003"                       }    -- Tahoe Snom ManCave
+Extension{ id = "8004", dialstring = "wait=120|8004"                       }    -- Tahoe Snom Spare (give to Scott)
+Extension{ id = "8005", dialstring = "wait=120|8005"                       }    -- Mac Pro Man Cave
+
+Extension{ id = "8010", dialstring = "wait=120|8010"                       }    -- Tahoe Polycom Speakerphone
+
+Extension{ id = "8101", dialstring = "cam-deck"                            }    -- Tahoe Deck/Lower Hillside Camera
+Extension{ id = "8102", dialstring = "cam-driveway"                        }    -- Tahoe Driveway Camera
+Extension{ id = "8103", dialstring = "cam-entryway"                        }    -- Tahoe Entryway Camera
+Extension{ id = "8104", dialstring = "cam-hillside"                        }    -- Tahoe Upper Hillside Camera
+
+
+-- Extensions (Mobile)
+
+default_external_caller_id_number = "5305233073"
+
+Extension{ id = "4001", dialstring = "wait=120|4001"                       }    -- iPhone SIP client
+Extension{ id = "4002", dialstring = "wait=120|4002"                       }    -- iPad SIP client
+
+-- Extensions (Santa Cruz)
+
+default_external_caller_id_number =  "8314650752"
+
+Extension{ id = "7001", dialstring = "wait=120|7001", many_handsets = true }    -- Santa Cruz DECT phones
+Extension{ id = "7101", dialstring = "7100"                                }    -- Sant Cruz driveway camera
+
+
+-- For Emacs:
+-- Local Variables:
+-- mode:lua
+-- End:

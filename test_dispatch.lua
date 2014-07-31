@@ -11,10 +11,12 @@ function test_dispatch(session, test_number)
       test_197.start(session)
    elseif (test_number == 196) then
       test_196.start(session)
+   elseif (test_number == 195) then
+      test_195.start(session)
    else 
       ivr.play(session, ANNOUNCEMENTS.."cannot-complete-not-in-service.wav")
    end
 end
 
-logError("Dispatch module loaded.")
+
 

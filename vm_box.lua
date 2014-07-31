@@ -355,10 +355,11 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
    end
 
    aLeg:setInputCallback("record_dtmf_callback", "");
-   aLeg:execute("playback",
-                "tone_stream://v=-7;%(100,0,440);"
-		   .."v=-7;>=2;+=.1;%(400,0,440)");
-
+   
+   sounds.voicemail_beep(aLeg)
+   
+   aLeg:setVariable("record_waste_resources", "true")
+   aLeg:setVariable("record_fill_cng", "1400")
    aLeg:recordFile(record_file, 360, 500, 6);
 
    mailbox_obj = mailbox.reopen(mailbox_obj);

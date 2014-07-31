@@ -6,12 +6,10 @@
 -- These routines are used to process custom "dial strings" that
 -- allow serial, parallel and "function" calling.
 --
---
--- dialplan.dial(our_dial_string, excludeExtension, switch_session);
 
 dialplan = {};
 
--- dialplan.parse(dial_string) --> {table of dialstrings}
+-- dialplan.parse(extension_object, exclude_extension_digits) --> {table of dialstrings}
 --
 --    DIALSTRING FORMAT:
 --
@@ -44,23 +42,23 @@ dialplan = {};
 --         "dialstring" = The dialstring data to be dialed.
 --
 
-function dialplan.parse(dialString, excludeExtension)
+function dialplan.parse(extension, excluded_extension)
 
    local results = {}
 
+   local dialstring = extension.dialstring
+   local default_domain = extension.domain
+
+   excluded_extension = excluded_extension or ""
+
+   if DEBUG then logInfo("Parsing <"..dialstring..">, excluding <"..excluded_extension..">"); end
+
    local continueBlock;
-
    local global_variables = {};
-
-   if (excludeExtension == nil) then
-      excludeExtension = "";
-   end
-
-   if DEBUG then logInfo("Parsing <"..dialString..">, excluding <"..excludeExtension..">"); end
 
    -- Break the dialstring up into serial blocks (separated by "|")
 
-   local continueBlocks = string_split(dialString, "|");
+   local continueBlocks = string_split(dialstring, "|");
 
    -- Process each block
 
@@ -77,18 +75,18 @@ function dialplan.parse(dialString, excludeExtension)
       --
       -- Anything else is an extension to be dialed.
 
-      dialString = dialplan_private.processBlock(continueBlock, global_variables,
-						 excludeExtension);
-      if (dialString == "") then
+      dialstring = dialplan_private.process_block(continueBlock, global_variables,
+					 	  excluded_extension, default_domain);
+      if (dialstring == "") then
 	 logError("Returning nil.");
 	 return nil
       end
 
-      if (dialString == "GL") then
+      if (dialstring == "GL") then
 	 goto continue
       end
 
-      if (dialString == "FU") then
+      if (dialstring == "FU") then
 	 if (global_variables._FUNCTION_NAME == "VM") then
 	    local result = {}
 	    local extension = global_variables._0
@@ -109,14 +107,14 @@ function dialplan.parse(dialString, excludeExtension)
      
       local result = {}
       result.kind = "DS"
-      result.dialstring = dialString
+      result.dialstring = dialstring
       table_append(results, result)
 
       ::continue::
    end
    
    if (#results == 0) then
-      if (dialString == "") then
+      if (dialstring == "") then
 	 logError("No results. Returning nil.");
 	 return nil
       end
@@ -141,7 +139,6 @@ function dialplan.make_and_ring_endpoint(dial_string)
    local result
    local message
 
-   local switchState
    local hangupState
    local disposition
 
@@ -152,19 +149,11 @@ function dialplan.make_and_ring_endpoint(dial_string)
    -- We don't get this far until something difinitive happens with the
    -- session.
 
-   if (leg:ready() == false) then
-      result = "FAILED"
-      message = "The destination session does not appear to exist anymore."
-
-      goto failed
-   end
-
    --
    -- Freeswitch as a bunch of different state variables, so we
    -- examine a few of them to be exact in our conclusion.
    --
 
-   switchState = leg:getState()
    hangupState = leg:hangupCause()
    disposition = leg:getVariable("endpoint_disposition")
 
@@ -251,7 +240,10 @@ function dialplan.connect_freeswitch_style(source_session, freeswitch_dialstring
    freeswitch.bridge(aLeg, bLeg)
 
    hangupCause = bLeg:hangupCause()
-   bLeg:destroy();
+   bLeg:destroy()
+   aLeg:hangup()
+
+   if DEBUG then LogInfo("bLeg hangup cause: ["..hangupCause.."]"); end
 
    return "COMPLETED", "The call completed normally."
 end
@@ -274,18 +266,18 @@ end
 -- "TRY VOICEMAIL", extension
 --
 
-function dialplan.connect_custom_style(source_session, custom_dialstring, exclude_extension)
+function dialplan.connect_custom_style(source_session, extension_object, excluded_extension)
    
    local results = {}
 
-   exclude_extension = exclude_extension or ""
+   excluded_extension = excluded_extension or ""
 
-   logInfo("dial("..custom_dialstring..", {session}, "..exclude_extension..")");
+   if DEBUG then logInfo("{session}, "..extension_object.dialstring..", {session}, "..excluded_extension); end
 
-   results = dialplan.parse(custom_dialstring, exclude_extension)
+   results = dialplan.parse(extension_object, excluded_extension)
 
    if (results == nil) then
-      return FAILED, "No destinations could be found for the custom dialstring <"..custom_dialstring..">"
+      return FAILED, "No destinations could be found for the custom dialstring <"..extension_object.dialstring..">"
    end
 
    local last_result
@@ -299,9 +291,11 @@ function dialplan.connect_custom_style(source_session, custom_dialstring, exclud
       if (kind == "FU_VM") then
 	 -- VOICEMAIL!
 	 
+	 if DEBUG then logInfo("Returning TRY_VOICEMAIL"); end
 	 return "TRY VOICEMAIL", dialstring
 
       elseif (dialString == "") then
+	 if DEBUG then logError("Returning FAILED: Internal Error"); end
 	 return "FAILED", "Internal error.  Received an empty dialstring after parsing."
       else
 	 --
@@ -311,6 +305,7 @@ function dialplan.connect_custom_style(source_session, custom_dialstring, exclud
 
 	 if result == "COMPLETED" then
 	    -- YAY!  DONE!
+	    if DEBUG then logInfo("Returning COMPLETED"); end
 	    return "COMPLETED", "The call was connected and completed normally."
 	 end
 
@@ -326,28 +321,14 @@ function dialplan.connect_custom_style(source_session, custom_dialstring, exclud
    -- HMM. Got all the way to the end without completing...
    --
    if (last_result and last_reason) then
+      if DEBUG then LogError("Returning "..last_result..": "..last_reason); end
       return last_reasult, last_reason
    end
 
+   if DEBUG then LogError("Returning FAILED: Unknown Error"); end
    return "FAILED", "Unknown failure. No additional data can be provided."
 end
 
-SIT_VACANT="tone_stream://%(274,0,913.8);%(274,0,1370.6);%(380,0,1776.7)"
-
-function play_sit(session)
-    session:answer()
-    session:sleep(500)
-
-    for x=1,3 do
-        session:execute("playback", SIT_VACANT)
-	session:sleep(250)
-	session:streamFile(ANNOUNCEMENTS.."cannot-complete-not-in-service.wav")
-	session:sleep(1000)
-    end
-
-    session:sleep(250)
-    session:hangup()
-end
 
 
 

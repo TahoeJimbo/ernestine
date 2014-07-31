@@ -1,63 +1,35 @@
 
-HOUR_BED  = 21;  -- 10pm
-HOUR_WAKE = 10;  -- 10am
 
---
--- Extensions
---
-
--- 546 = Jim's hunt group.
-
--- 1001 = hillside camera
--- 1002 = driveway camera
--- 1003 = entryway camera
--- 1004 = hillside camera
-
--- 4001 = iphone
--- 4002 = ipad
--- 8001 = Panasonic SIP Tahoe
--- 8002 = Snom Basement
--- 8003 = Snom Office
--- 8004 = Snom Spare
--- 8010 = SpeakerPhone
-
-extensions = {}
-canDialSelf = {}
-
-extensions["JimTahoe"]   = "wait=30|8001:4001|VM(546)"
-extensions["JimOutside"] = "wait=30:4001|VM(546)"
-extensions["JimScruz"]   = "wait=30:7001|VM(546)"
-
-extensions["JimWakeTahoe"]   = "8001:4001:JimsCell"
-extensions["JimWakeOutside"] = "4001:JimsCell"
-extensions["JimWakeScruz"]   = "7001:JimsCell"
-
-extensions["JimDirectVM"] = "VM(546)"
-
-extensions["4001"] = "wait=120|4001"
-extensions["4002"] = "wait=120|4002"
-
-extensions["7001"] = "wait=120|7001"
-canDialSelf["7001"] = true;
-
-extensions["8000"] = "wait=120|8001:8002:8003:8004:8010"
-
-extensions["8001"] = "wait=120|8001"
-canDialSelf["8001"] = true;
-
-extensions["8002"] = "wait=120|8002"
-extensions["8003"] = "wait=120|8003"
-extensions["8004"] = "wait=120|8004"
-extensions["8010"] = "wait=120|8010"
-
-extensions["1001"] = "wait=120|1001"
-extensions["1002"] = "wait=120|1002"
-extensions["1003"] = "wait=120|1003"
-extensions["1004"] = "wait=120|1004"
-
-extensions["72688"] = "wait=120|72688"
 
 --[[ UTILITIES --]]
+
+
+--
+-- Extension file processor
+--
+
+extensions = {}
+
+function Extension(ext)
+   if ext.id == nil then
+      logError("Extension's id must be set.")
+      return
+   end
+
+   if ext.dialstring == nil then
+      logError("Extension's dialstring must be set.")
+   end
+
+   ext.domain = ext.domain or default_domain
+   ext.external_caller_id_name = ext.external_caller_id_name or default_external_caller_id_name
+   ext.external_caller_id_number = ext.external_caller_id_number or default_external_caller_id_number
+   ext.many_handsets = ext.many_handsets or default_many_handsets
+
+   extensions[ext.id] = ext
+end
+
+
+dofile(SCRIPTS.."dialplan_config.txt")
 
 --
 -- Returns 1 for the user's standard greeting
@@ -82,142 +54,141 @@ function selectVoicemailGreeting(extension)
 end
 
 
-function extension_546(aLeg, excludeExtension)
+function extension_546()
 
-   local dialString = nil;
+   local extension = nil;
+   local where = location.get("546")
 
    if (selectVoicemailGreeting("546") ~= 1) then
-      -- straight to VM
-      dialString = "VM(546)";
-   elseif (location.get("546") == kTAHOE) then
-      dialString = extensions["JimTahoe"];
+      return extensions["JimDirectVM"]
 
-   elseif (location.get("546") == kOUTSIDE) then
-      dialString = extensions["JimOutside"];
+   elseif (where == kTAHOE) then
+      return extensions["JimTahoe"];
 
-   elseif (location.get("546") == kSCRUZ) then
-      dialString = extensions["JimScruz"];
-   end
+   elseif (where == kOUTSIDE) then
+      return extensions["JimOutside"];
 
-   if (dialString) then
-      aLeg:execute("ring_ready");
-
-      local result, message = dialplan.connect_custom_style(aLeg, dialString, excludeExtension);
-
-      if (result == "COMPLETED") then
-	 return
-      end
-      
-      if (result == "TRY VOICEMAIL") then
-	 local extension = message
-
-	 logInfo("Voicemail extension: "..extension);
-	 greeting = selectVoicemailGreeting(extension);
-	 logInfo("Voicemail greeting "..greeting);
-
-	 aLeg:setVariable("X-vm_extension", extension);
-	 aLeg:setVariable("X-vm_greeting", greeting);
-
-	 vm_record_entrypoint(aLeg, extension, greeting);
-	 return
-      end
+   elseif (where == kSCRUZ) then
+      return extensions["JimScruz"];
    end
    
--- Anything else is a failure.
-
-   aLeg:answer()
-   session:execute("playback","tone_stream://%(500,500,480,620);loops=10")
+   logError("Couldn't choose call disposition for extension 546")
+   return nil
 end
 
-function extension_JimWake(aLeg, excludeExtension)
+function extension_JimWake()
 
    local dialString = nil;
+   local where = location.get("546")
+   local extension = nil
 
-   if (location.get("546") == kTAHOE) then
-      dialString = extensions["JimWakeTahoe"];
+   if (where == kTAHOE) then
+      extension = extensions["JimWakeTahoe"];
 
-   elseif (location.get("546") == kOUTSIDE) then
-      dialString = extensions["JimWakeOutside"];
+   elseif (where == kOUTSIDE) then
+      extension = extensions["JimWakeOutside"];
 
-   elseif (location.get("546") == kSCRUZ) then
-      dialString = extensions["JimWakeScruz"];
+   elseif (where == kSCRUZ) then
+      extension = extensions["JimWakeScruz"];
+   end
+   
+   if extension then
+      ivr.play(aLeg, SOUNDS.."Custom/ill-try-to-wake-him.wav");
+      return extension
    end
 
-   ivr.play(aLeg, SOUNDS.."Custom/ill-try-to-wake-him.wav");
-
-   if (dialString) then
-      local result, message = dialplan.connect_custom_style(aLeg, dialString, excludeExtension);
-      if result == "COMPLETED" then
-	 return
-      else 
-	 logError("Failed to properly wake Jim: "..message)
-      end
-   end
-
-   aLeg:answer()
-   session:execute("playback","tone_stream://%(500,500,480,620);loops=10")
+   logError("Failed to properly wake Jim: "..message)
+   return nil
 end
 
-function dispatchInternal(aLeg, dest)
+function dispatch_internal(aLeg, destination_digits)
 
-   sourceExtension = aLeg:getVariable("sip_from_user_stripped");
+   local source_extension_digits = aLeg:getVariable("sip_from_user_stripped");
+   local excluded_extension
+   local extension = nil
 
-   if (canDialSelf[dest] == true and dest == sourceExtension) then
-      excludeExtension = ""
+   if DEBUG then logInfo("Connecting to <"..destination_digits.."> from <"..source_extension_digits..">"); end
+
+   local source_extension = extensions[source_extension_digits]
+   if source_extension and source_extension.many_handsets == true then
+      excluded_extension = ""
    else
-      excludeExtension = sourceExtension
+      excluded_extension = source_extension_digits
    end
 
-   local dialString = nil
+   -- Pseudo extensions with custom logic  (location, or special hunting)
+   -- They'll return an extension object we should use, or nil if not.
 
-   if (dest == "546") then
-      extension_546(aLeg, excludeExtension);
-      return;
+   if (destination_digits == "546") then
+      extension = extension_546()
    end
 
-   if (dest == "JimWake") then
-      extension_JimWake(aLeg, excludeExtension);
-      return;
+   if (destination_digits == "JimWake") then
+      extension = extension_JimWake()
    end
 
-   dialString = extensions[dest];
+   if extension == nil then 
+      --
+      -- Custom functions didn't recommend anything...  So use the dialed digits.
+      --
+      extension = extensions[destination_digits]
+   end
+
+   if (extension == nil) then
+      logError("Could not locate extension <"..destination_digits.."> in dialplan_config.txt file")
+      sounds.sit(aLeg, "intercept")
+      return
+   end
+
+   aLeg:execute("ring_ready");
+
+   local result, message = dialplan.connect_custom_style(aLeg, extension, excluded_extension)
+   if result == "COMPLETED" then
+      return
+
+   elseif result == "TRY VOICEMAIL" then
+      local extension = message
+
+      logInfo("Voicemail extension: "..extension);
+      greeting = selectVoicemailGreeting(extension);
+      logInfo("Voicemail greeting "..greeting);
       
-   if (dialString ~= nil) then
-      aLeg:execute("ring_ready");
-      local result, message = dialplan.connect_custom_style(aLeg, dialString, excludeExtension)
-      if (result == "COMPLETED") then
-	 return
-      else
-	 logError("Failed to connect "..sourceExtension.." to "..dest..": "..message)
-      end
+      aLeg:setVariable("X-vm_extension", extension);
+      aLeg:setVariable("X-vm_greeting", greeting);
+      
+      vm_record_entrypoint(aLeg, extension, greeting);
+      return
+   else
+      logError("Failed to connect "..source_extension_digits.." to "..destination_digits..": "..message)
    end
 
-   aLeg:answer()
-   session:execute("playback","tone_stream://%(500,500,480,620);loops=10")
+   sounds.sit(aLeg, "reorder-local")
 end
 
-function dispatchExternal(aLeg, dest)
+function dispatch_external(aLeg, dest)
 
    local callerIDName = aLeg:getVariable("sip_from_display");
 
    -- TAHOE
 
    if (dest == "15305231043") then
-      dialplan_entrypoint(aLeg, "private", "546");
+      dispatch_internal(aLeg, "546");
    elseif (dest == "15305231044") then
-      dialplan_entrypoint(aLeg, "private", "JimDirectVM");
+      dispatch_internal(aLeg, "JimDirectVM");
 
    -- SCRUZ
 
    elseif (dest == "18314650752") then
-      dialplan_entrypoint(aLeg, "private", "546");
+     dispatch_internal(aLeg, "546");
 
    -- EASTCLIFF
 
    elseif (dest == "18314658399") then
       aLeg:setVariable("sip_from_display", "ECF: "..callerIDName);
-      dialplan_entrypoint(aLeg, "private", "546");
+      dispatch_internal(aLeg, "546");
    end
+
+   sounds.sit(aLeg, "intercept");
 end
 
 function dispatch(aLeg, context, dest)
@@ -225,24 +196,23 @@ function dispatch(aLeg, context, dest)
    logInfo("dispatch({session}, "..dest..", "..context..")");
 
    if (context == "private") then
-      dispatchInternal(aLeg, dest);
+      dispatch_internal(aLeg, dest);
    elseif (context == "public") then
-      dispatchExternal(aLeg, dest);
+      dispatch_external(aLeg, dest);
    else
-      play_sit(aLeg);
+      sounds.sit(aLeg, "reorder-local");
    end
-
 end
 
 -- ######
 --  MAIN
 -- ######
 
-function dialplan_entrypoint(session, context, destination)
+function dialplan_entrypoint_inbound(session, context, destination)
 
-   logError("STARTING DIALPLAN: dest=<"..destination..">, "
+   logError("STARTING INTERNAL DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
 	    dispatch(aLeg, context, destination);
-   logError("ENDING  DIALPLAN: dest=<"..destination..">, "
+   logError("ENDING INTERNAL DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
 end

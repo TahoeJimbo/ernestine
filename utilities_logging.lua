@@ -13,7 +13,7 @@ function private_log.getHeader()
    if (COMPATIBILITY_MODE == true) then 
       info = debug.getinfo(3, "nSl")
    else
-      info = debug.getinfo(2, "nSl")
+      info = debug.getinfo(3, "nSl")
    end
 
    if info.name == nil then
