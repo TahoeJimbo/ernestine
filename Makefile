@@ -17,7 +17,9 @@ CORE_LIBS = CONFIGURATION.lua \
 	    utilities_sounds.lua \
 	    utilities_tables.lua \
 	    utilities_recite.lua \
-	    utilities_ivr.lua
+	    utilities_ivr.lua \
+	    obj_dialstring.lua \
+	    obj_destination.lua
 
 VOICEMAIL_LIB = vm_box.lua \
 		vm_box_menu.lua \
@@ -33,7 +35,9 @@ LOCATION_LIB = location.lua
 
 UNIT_TEST_SRC = unit_test_recite.lua \
 		unit_test_dialplan.lua \
+		unit_test_obj_dialstring.lua \
 		unit_test_main.lua
+
 
 #
 # INSITU TEST FILES
@@ -81,14 +85,16 @@ HELPER_APP=helper.o
 
 all: clean $(APPS) test
 
+lua-lint:
+	@rm -f /tmp/dispatch-combined.lua
+	@cat $(DISPATCH_APP) > /tmp/dispatch-combined.lua
+
 clean:
 	@(cd $(INSTALL_DIR); rm -f $(APPS) $(HELPER_APP))
 	@rm -f $(APPS) $(HELPER_APP)
 
 test:
-	@lua unit_tests DIALPLAN | diff -c - unit_test_dialplan.expected.txt
-	@lua unit_tests RECITE   | diff -c - unit_test_recite.expected.txt
-
+	@lua unit_tests
 
 helper: $(HELPER_APP)
 	@echo "HELPER:"

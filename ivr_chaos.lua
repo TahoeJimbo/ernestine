@@ -19,12 +19,12 @@ dispatcher["jim"] = "Jim Hayes"
 --                   B = transfer by bridging to sofia style endpoint
 
 dispatchExt["jason"]
-                  = "B:sofia/gateway/external::callcentric-scruz/16505214710"
+                  = "B:16505214710"
 
 dispatchExt["eric"] 
-                  = "B:sofia/gateway/external::callcentric-scruz/12138148338"
+                  = "B:12138148338"
 
-dispatchExt["jim"] = "T:546,private";
+dispatchExt["jim"] = "T:546";
 
 -------------------------------------------------------------------------------
 --
@@ -51,11 +51,11 @@ function ivr_dispatch(aLeg, destination)
     
     if (type == "T") then
        local extension, context = subDialString:match("^(%d+),(.+)$");
-       dialplan_entrypoint(aLeg, context, extension);
+       dialplan_entrypoint_inbound(aLeg, private, extension);
     end
 
     if (type == "B") then
-       dialplan.connect(aLeg, subDialString);
+       dialplan_entrypoint_outbound(aLeg, context, subDialString)
     end
 end
 

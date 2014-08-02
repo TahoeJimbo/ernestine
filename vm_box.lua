@@ -350,7 +350,7 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
       --
       -- Find jim. :-)
       --
-      dialplan_entrypoint(aLeg, "private", "JimWake");
+      dialplan_entrypoint_inbound(aLeg, "private", "JimWake");
       return;
    end
 
@@ -365,7 +365,7 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
    mailbox_obj = mailbox.reopen(mailbox_obj);
 
    if ((digit == "9") and (mailbox_obj.Extension == "546")) then
-      dialplan_entrypoint(aLeg, "private", "JimWake");
+      dialplan_entrypoint_inbound(aLeg, "private", "JimWake");
       return;
    end
 

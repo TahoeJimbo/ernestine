@@ -66,12 +66,16 @@ Extension{ id = "8004", dialstring = "wait=120|8004"                       }    
 Extension{ id = "8005", dialstring = "wait=120|8005"                       }    -- Mac Pro Man Cave
 
 Extension{ id = "8010", dialstring = "wait=120|8010"                       }    -- Tahoe Polycom Speakerphone
+Extension{ id = "8011", dialstring = "wait=120|8011"                       }    -- Grandstream FXS Port
 
 Extension{ id = "8101", dialstring = "cam-deck"                            }    -- Tahoe Deck/Lower Hillside Camera
 Extension{ id = "8102", dialstring = "cam-driveway"                        }    -- Tahoe Driveway Camera
 Extension{ id = "8103", dialstring = "cam-entryway"                        }    -- Tahoe Entryway Camera
 Extension{ id = "8104", dialstring = "cam-hillside"                        }    -- Tahoe Upper Hillside Camera
 
+-- Extensions (POTS)
+
+Extension{ id = "8200", dialstring = "8200"                               }     -- Grandstream inbound
 
 -- Extensions (Mobile)
 

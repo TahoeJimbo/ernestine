@@ -1,129 +1,115 @@
 
------DIALPLAN UTILITIES--------------------------------------------------------
 
----------PARSER
+Destination = {}
 
--- These routines are used to process custom "dial strings" that
--- allow serial, parallel and "function" calling.
---
+--[[
 
-dialplan = {};
+Fields:
 
--- dialplan.parse(extension_object, exclude_extension_digits) --> {table of dialstrings}
---
---    DIALSTRING FORMAT:
---
---    Dialstring format = {extensions list}|{extensions list}
---
---    extensions list =  extension[:extension]+
---    extension = var=value | [0-9]+ | function(args)
---
---    vars:
---      wait=x      >>  wait x seconds for the person to answer
---                   the call before giving up.
---    functions:
---      VM(args)    >>  Transfer the call to specified voicemail extension.
+private:
+custom_dialstring = our specially formatted dialstring to use
+freeswitch_dialstring = a freeswitch dialstring to use
+outgoing_caller_id_number  -> origination_caller_id_name
+outgoing_caller_id_name
+
+
+--]]
+
+function Destination:new()
+   object = {}
+   setmetatable(object, self)
+   self.__index = self
+
+   self.source_caller_id_name = nil
+   self.source_caller_id_number = nil
+
+   self.kind = ""
+   self.domain = ""
+
+   return object
+end
+
+function Destination:set_source_caller_id(name, number)
+   self.source_caller_id_name = name
+   self.source_caller_id_number = number
+end
+
+function Destination:set_excluded_extension(extension_digits)
+   self.excluded_extension = extension_digits
+end
+
+function Destination:set_default_domain(domain)
+   self.domain = domain
+end
+
 -- 
---    example:
---      "wait=30|8001:wait=50,8002|8005|VM(8000)"
---      set the default answer time to 30 seconds.
---      call 8001 and 8002 in paralell, giving 8001 30 seconds to
---      answer (the default) and 8002 50 seconds.  If no answer after
---      that, give 8005 a crack for 30 seconds, then send the
---      call to voicemail for box 8000.
---
---    Returns: 
---      An unkeyed table with with each entry as a dialstring
---      to attempt dialing, or nil if the dialstring contained an error.
---
---      Each entry is a another table with the keys:
---         "kind" = the type of entry. "FU_VM" (voicemail function, box# in dialstring)
---                                  or "DS" (dial the call in dialstring)
---         "dialstring" = The dialstring data to be dialed.
+-- Parses a custom dialstring, storing the result for later use.
+-- If custom options are enabled (like caller id) these settings are
+-- incorporated into the dialstring.
 --
 
-function dialplan.parse(extension, excluded_extension)
+function Destination:set_custom_dialstring(custom_dialstring)
+   self.dialstring = Dialstring:new_custom(custom_dialstring)
+   self.kind = "custom"
+end
 
-   local results = {}
+-- Sets the dialstring to the raw dialstring provided.  Nothing is done
+-- to it.
 
-   local dialstring = extension.dialstring
-   local default_domain = extension.domain
+function Destination:set_freeswitch_dialstring(freeswitch_dialstring)
+   self.dialstring = Dialstring:new_freeswitch(freeswitch_dialstring)
+   self.kind = "freeswitch"
+end
 
-   excluded_extension = excluded_extension or ""
+-- Parses a sofia dialstring and creats a freeswitch dialstring from
+-- it, including any custom options (like caller id).
 
-   if DEBUG then logInfo("Parsing <"..dialstring..">, excluding <"..excluded_extension..">"); end
+function Destination:set_sofia_dialstring(sofia_dialstring)
+   self.dialstring = Dialstring:new_sofia(sofia_dialstring)
+   self.kind = "sofia"
+end
 
-   local continueBlock;
-   local global_variables = {};
 
-   -- Break the dialstring up into serial blocks (separated by "|")
+-- Connect to the destination, returning (status, message)
+--
+-- One of the dialstring set functions must be called before this.
+--
+-- Returns a tuple of (result (String), reason (String))
+--
+--  "FAILED",     reason       The origination failed for the given reason
+--  "COMPLETED",   message     The call was answered and ended normally
+--  "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
+--  "NO ANSWER",  reason       The call was not answered in the time provided
 
-   local continueBlocks = string_split(dialstring, "|");
+function Destination:connect(source_session)
+   
+   self.dialstring:set_excluded_extension(self.excluded_extension)
 
-   -- Process each block
+   if (self.source_caller_id_name) then
+      self.dialstring:set_variable("origination_caller_id_name", self.source_caller_id_name)
+   end
 
-   for _,continueBlock in ipairs(continueBlocks) do
-
-      --
-      -- The processor returns the kind of block it is, "GL" for a global
-      -- variable, which is kept in global_variables["name"] and are
-      -- updated there when found.
-      --
-      -- "VM" for voicemail function, where we put the voicemail box as the
-      -- dialstring.  (Function parameters are in the global_variables
-      -- beginning with an underscore and should be erased when consumed.)
-      --
-      -- Anything else is an extension to be dialed.
-
-      dialstring = dialplan_private.process_block(continueBlock, global_variables,
-					 	  excluded_extension, default_domain);
-      if (dialstring == "") then
-	 logError("Returning nil.");
-	 return nil
-      end
-
-      if (dialstring == "GL") then
-	 goto continue
-      end
-
-      if (dialstring == "FU") then
-	 if (global_variables._FUNCTION_NAME == "VM") then
-	    local result = {}
-	    local extension = global_variables._0
-
-	    result.kind = "FU_VM"
-	    result.dialstring = extension
-
-	    if DEBUG then logInfo("Voicemil Extension "..extension); end
-	    global_variables._FUNCTION_NAME = nil
-
-	    table_append(results, result)
-	    goto continue
-	 end
-
-	 logError("Unknown function: "..global_variables._FUNCTION_NAME);
-	 goto continue
-      end
-     
-      local result = {}
-      result.kind = "DS"
-      result.dialstring = dialstring
-      table_append(results, result)
-
-      ::continue::
+   if (self.source_caller_id_number) then
+      self.dialstring:set_variable("origination_caller_id_number", self.source_caller_id_number)
    end
    
-   if (#results == 0) then
-      if (dialstring == "") then
-	 logError("No results. Returning nil.");
-	 return nil
-      end
+   if (self.domain and self.domain ~= "") then
+      self.dialstring:set_default_domain(self.domain)
    end
 
-   if DEBUG then table_dump("Dialstring table", results); end
+   if self.kind == "custom" then
+      return self:PRIV_connect_custom_style(source_session)
+   end
 
-   return results;
+   if self.kind == "freeswitch" then
+      return self:PRIV_connect_freeswitch_style(source_session)
+   end
+
+   if self.kind == "sofia" then
+      return self:PRIV_connect_freeswitch_style(source_session)
+   end
 end
+
 
 -- Attempt to ring a dial-string until it is answered or not. :-)
 --
@@ -134,17 +120,19 @@ end
 --     nil, "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
 --     nil, "NO ANSWER",  reason       The call was not answered in the time provided
 
-function dialplan.make_and_ring_endpoint(dial_string)
+function Destination:PRIV_make_and_ring_endpoint(dialstring_obj)
 
    local result
    local message
 
    local hangupState
    local disposition
+   
+   local dialstring = dialstring_obj.get()
 
-   if DEBUG then logInfo("Calling "..dial_string); end
+   if DEBUG then logInfo("Calling "..dialstring); end
 
-   local leg = freeswitch.Session(dial_string)
+   local leg = freeswitch.Session(dialstring)
 
    -- We don't get this far until something difinitive happens with the
    -- session.
@@ -192,7 +180,7 @@ function dialplan.make_and_ring_endpoint(dial_string)
 end
 
 -- 
--- dialplan.connect_freeswitch_style(source_session, freeswitch_dialstring)
+-- dialplan.connect_freeswitch_style(source_session)
 --
 -- Attempts to call the freeswitch_dialstring and connects it to the
 -- source_session if successful.
@@ -207,9 +195,11 @@ end
 -- "BUSY",      message
 -- "FAILED",    reason
 
-function dialplan.connect_freeswitch_style(source_session, freeswitch_dialstring)
+function Destination:PRIV_connect_freeswitch_style(source_session, alternate_dialstring)
 
    local aLeg = source_session;
+
+   local freeswitch_dialstring = alternate_dialstring or self.dialstring:get()
 
    -- Make sure our a-leg is still alive...
 
@@ -250,7 +240,7 @@ function dialplan.connect_freeswitch_style(source_session, freeswitch_dialstring
    return "COMPLETED", "The call completed normally."
 end
 
--- dialplan.connect_(source_session, custom_dialstring, exclude_extension)
+-- dialplan.connect_custom(source_session)
 -- 
 -- Attempts to connect the source session with one of the endpoints in our
 -- custom dialstring.  If exclude_extension is not empty (or nil) of the
@@ -268,18 +258,16 @@ end
 -- "TRY VOICEMAIL", extension
 --
 
-function dialplan.connect_custom_style(source_session, extension_object, excluded_extension)
+function Destination:PRIV_connect_custom_style(source_session)
    
    local results = {}
 
-   excluded_extension = excluded_extension or ""
+   results = self.dialstring:get()
 
-   if DEBUG then logInfo("{session}, "..extension_object.dialstring..", {session}, "..excluded_extension); end
-
-   results = dialplan.parse(extension_object, excluded_extension)
+   if DEBUG then logInfo("Starting custom connection to <"..self.dialstring:description()..">"); end
 
    if (results == nil) then
-      return FAILED, "No destinations could be found for the custom dialstring <"..extension_object.dialstring..">"
+      return FAILED, "No destinations could be found for the custom dialstring <"..self.dialstring:description()..">"
    end
 
    local last_result
@@ -296,14 +284,14 @@ function dialplan.connect_custom_style(source_session, extension_object, exclude
 	 if DEBUG then logInfo("Returning TRY_VOICEMAIL"); end
 	 return "TRY VOICEMAIL", dialstring
 
-      elseif (dialString == "") then
+      elseif (dialstring == "") then
 	 if DEBUG then logError("Returning FAILED: Internal Error"); end
 	 return "FAILED", "Internal error.  Received an empty dialstring after parsing."
       else
 	 --
 	 -- Try to connect the call to this dialstring
 	 --
-	 local result, message = dialplan.connect_freeswitch_style(source_session, dialstring);
+	 local result, message = self:PRIV_connect_freeswitch_style(source_session, dialstring)
 
 	 if result == "COMPLETED" then
 	    -- YAY!  DONE!
@@ -323,14 +311,11 @@ function dialplan.connect_custom_style(source_session, extension_object, exclude
    -- HMM. Got all the way to the end without completing...
    --
    if (last_result and last_reason) then
-      if DEBUG then LogError("Returning "..last_result..": "..last_reason); end
-      return last_reasult, last_reason
+      if DEBUG then logError("Returning "..last_result..": "..last_reason); end
+      return last_result, last_reason
    end
 
-   if DEBUG then LogError("Returning FAILED: Unknown Error"); end
+   if DEBUG then logError("Returning FAILED: Unknown Error"); end
+
    return "FAILED", "Unknown failure. No additional data can be provided."
 end
-
-
-
-

@@ -142,7 +142,16 @@ function dispatch_internal(aLeg, destination_digits)
 
    aLeg:execute("ring_ready");
 
-   local result, message = dialplan.connect_custom_style(aLeg, extension, excluded_extension)
+   local destination = Destination:new()
+   destination:set_custom_dialstring(extension.dialstring)
+   destination:set_excluded_extension(excluded_extension)
+   destination:set_source_caller_id(aLeg:getVariable("sip_from_display"),
+				    source_extension_digits)
+
+   destination:set_default_domain(extension.domain)
+
+   local result, message = destination:connect(aLeg)
+
    if result == "COMPLETED" then
       return
 
@@ -159,7 +168,7 @@ function dispatch_internal(aLeg, destination_digits)
       vm_record_entrypoint(aLeg, extension, greeting);
       return
    else
-      logError("Failed to connect "..source_extension_digits.." to "..destination_digits..": "..message)
+      logError("Failed to connect "..source_extension_digits.." to "..extension.dialstring..": "..message)
    end
 
    sounds.sit(aLeg, "reorder-local")
