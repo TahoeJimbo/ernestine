@@ -23,7 +23,6 @@ end
 function location.write()                                --[[ LOCATE WRITE --]]
 
     local file, err
-    local key, location_datum
 
     file, err = io.open(LOC_CONFIG, "w")
 
@@ -36,7 +35,7 @@ function location.write()                                --[[ LOCATE WRITE --]]
 
     file:write("\n--[[ LOCATION DATA --]]\n\n");
 
-    for key,location_datum in pairs(location_data) do
+    for _, location_datum in pairs(location_data) do
     	file:write("Location ")
     	serialize(file, location_datum)
         file:write("\n")

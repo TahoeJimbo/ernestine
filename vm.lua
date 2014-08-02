@@ -52,7 +52,7 @@ function private_config_write()                          --[[ CONFIG_WRITE --]]
 
     file:write("\n--[[ VOICEMAIL CONFIGURATION --]]\n\n");
 
-    for key,extension in pairs(config) do
+    for _, extension in pairs(config) do
     	file:write("VMConfig ")
     	serialize(file, extension)
         file:write("\n")
@@ -146,7 +146,7 @@ function vm_record_entrypoint(aLeg, mailbox_number, greeting)
 
    if (mailbox_obj == nil) then
       ivr.play(aLeg, VM.."the-person-at-extension.wav");
-      number_smart(aLeg, mailbox_number);
+      recite.number_digits_smart(aLeg, mailbox_number);
       ivr.play(aLeg, VM.."sender-does-not-have-a-mailbox.wav");
       return "ERR";
    end

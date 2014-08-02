@@ -12,8 +12,6 @@ CORE_LIBS = CONFIGURATION.lua \
 	    utilities_logging.lua \
 	    utilities_files.lua \
 	    utilities_execute.lua \
-	    utilities_dialplan.lua \
-	    utilities_dialplan_private.lua \
 	    utilities_sounds.lua \
 	    utilities_tables.lua \
 	    utilities_recite.lua \
@@ -34,7 +32,6 @@ LOCATION_LIB = location.lua
 #
 
 UNIT_TEST_SRC = unit_test_recite.lua \
-		unit_test_dialplan.lua \
 		unit_test_obj_dialstring.lua \
 		unit_test_main.lua
 

@@ -40,7 +40,7 @@ function mailbox.update_mwi(mailbox_obj)
       end
    end
 
-   for index,extension_string in ipairs(notify_array) do
+   for _, extension_string in ipairs(notify_array) do
 
       local event = freeswitch.Event("MESSAGE_WAITING");
    
@@ -273,7 +273,6 @@ end
 
 function mailbox.previous_message(mailbox_obj, aLeg)
    local current_index = mailbox_obj.CurrentIndex;
-   local mailbox_mode = mailbox_obj.Mode;
 
    current_index = current_index - 1;
    
@@ -419,7 +418,6 @@ end
 function mailbox.announce_stats(mailbox_obj, aLeg)
 
    local menu = {}
-   local menu_index = 0
    
    -- No messages at all?
 

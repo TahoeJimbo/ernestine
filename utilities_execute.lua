@@ -6,7 +6,7 @@ debug_execute = true;
 
 function log_osex(result, command)
 
-    if (debug_os == true) and (result == 0) then
+    if (debug_execute == true) and (result == 0) then
        logInfo("Executed <"..command..">")
     end
 

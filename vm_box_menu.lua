@@ -61,7 +61,6 @@ end
 
 function mailbox_play_menu(mailbox_obj, aLeg)
 
-   local mailbox_mode = mailbox_obj.Mode;
    local exitRequested = false;
    local errorCount = 4;
 
@@ -170,7 +169,7 @@ function mailbox_play_menu(mailbox_obj, aLeg)
 
    logInfo("Cleaning up mailbox...");
 
-   mailbox.cleanup(mailbox_obj, message_type);
+   mailbox.cleanup(mailbox_obj);
 
    logInfo("Returning to main menu...");
 

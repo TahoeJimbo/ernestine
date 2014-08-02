@@ -31,13 +31,13 @@ function dialplan_is_nanpa_number(destination)
 
    area_code, local_number = string.match(destination, "^1([2-9]%d%d)([2-9]%d%d%d%d%d%d)$")
 
-   if (area_code) then goto check_for_local; end
+   if (area_code == nil) then
+      area_code, local_number = string.match(destination, "^%+1([2-9]%d%d)([2-9]%d%d%d%d%d%d)$")
 
-   area_code, local_number = string.match(destination, "^%+1([2-9]%d%d)([2-9]%d%d%d%d%d%d)$")
-
-   if (area_code) then goto check_for_local; end
-
-   local_number = string.match(destination, "^([2-9]%d%d%d%d%d%d)$")
+      if (area_code == nil) then 
+	 local_number = string.match(destination, "^([2-9]%d%d%d%d%d%d)$")
+      end
+   end
 
    if (local_number == nil) then
       --
@@ -51,21 +51,13 @@ function dialplan_is_nanpa_number(destination)
    -- Seven digits is a local number so just return it.
    --
 
-   if (local_number) then
-      logInfo("Local number: "..local_number)
-      return "local", local_number
+   if area_code and area_code ~= LOCAL_AREA_CODE then
+      logInfo("Domestic number: "..area_code..local_number)
+      return "domestic", area_code..local_number
    end
 
-   ::check_for_local::
-
-   if area_code == LOCAL_AREA_CODE then
-      logInfo("Local number: "..local_number)
-      return "local", local_number
-   end
-
-   logInfo("Domestic number: "..area_code..local_number)
-   return "domestic", area_code..local_number
-
+   logInfo("Local number: "..local_number)
+   return "local", local_number
 end
 
 function route_to_carrier(aLeg, kind, destination_obj, outpulsed_number)
@@ -131,9 +123,6 @@ function dispatch_outbound(aLeg, context, destination)
 
    ------PARSE THE OUTBOUND NUMBER------
 
-   local local_call = false
-   local domestic_call = false
-
    local number_kind
    local outpulsed_number
 
@@ -179,7 +168,7 @@ function dialplan_entrypoint_outbound(session, context, destination)
 
    logError("STARTING OUTBOUND DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
-	    dispatch_outbound(aLeg, context, destination);
+	    dispatch_outbound(session, context, destination);
    logError("ENDING OUTBOUND DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
 

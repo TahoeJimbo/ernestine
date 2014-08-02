@@ -120,7 +120,7 @@ end
 --     nil, "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
 --     nil, "NO ANSWER",  reason       The call was not answered in the time provided
 
-function Destination:PRIV_make_and_ring_endpoint(dialstring_obj)
+function Destination:PRIV_make_and_ring_endpoint(dialstring)
 
    local result
    local message
@@ -128,8 +128,6 @@ function Destination:PRIV_make_and_ring_endpoint(dialstring_obj)
    local hangupState
    local disposition
    
-   local dialstring = dialstring_obj.get()
-
    if DEBUG then logInfo("Calling "..dialstring); end
 
    local leg = freeswitch.Session(dialstring)
@@ -150,32 +148,35 @@ function Destination:PRIV_make_and_ring_endpoint(dialstring_obj)
    if hangupState == "SUCCESS" and (disposition == "ANSWER" or disposition == "EARLY MEDIA") then 
       result = "ANSWERED"
       message = "The call was answered."
+      if DEBUG then logInfo(result..": "..message); end
       return leg, result, message
    end
 
    if hangupState == "NO ANSWER" or hangupState == "NO_USER_RESPONSE" then
       result = "NO ANSWER"
       message = "The call was not answered."
-      goto failed
+      if DEBUG then logInfo(result..": "..message); end
+      return nil, result, message
    end
 
    if hangupState == "USER_BUSY" then
       result = "USER BUSY"
       message = "The subscriber is busy."
-      goto failed
+      if DEBUG then logInfo(result..": "..message); end
+      return nil, result, message
    end
 
    if hangupState == "NORMAL_CLEARING" then
       result = "FAILED"
       message = "Call cleared normally, when it should have been something else."
-      goto failed
+      logError(result..": "..message)
+      return nil, result, message
    end
 
    result = "FAILED"
    message = "Failed for reason ["..hangupState.."]."
 
-   ::failed::
-   if DEBUG then logError(result..": "..message); end
+   logError(result..": "..message)
    return nil, result, message
 end
 
@@ -213,7 +214,7 @@ function Destination:PRIV_connect_freeswitch_style(source_session, alternate_dia
    -- Create the b-leg and attempt a connection...  The make_and_ring
    -- call will not return until something difinitive happens.
 
-   local bLeg, status, message = dialplan.make_and_ring_endpoint(freeswitch_dialstring)
+   local bLeg, status, message = self:PRIV_make_and_ring_endpoint(freeswitch_dialstring)
 
    if (bLeg == nil) then
       return status, message
@@ -267,7 +268,7 @@ function Destination:PRIV_connect_custom_style(source_session)
    if DEBUG then logInfo("Starting custom connection to <"..self.dialstring:description()..">"); end
 
    if (results == nil) then
-      return FAILED, "No destinations could be found for the custom dialstring <"..self.dialstring:description()..">"
+      return "FAILED", "No destinations could be found for the custom dialstring <"..self.dialstring:description()..">"
    end
 
    local last_result

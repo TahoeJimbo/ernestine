@@ -73,16 +73,6 @@ function process_vm_cli()
    vm_cli_entrypoint();
 end
 
-function process_chaos_ivr()
-   if (#arg ~= 1) then
-      logError("process_chaos_ivr(): Wrong number of arguments.");
-      return;
-   end
-   logError("Starting Carpe Chaos IVR");   
-   chaos_ivr_entrypoint(session);
-   logError("Finishing Carpe Chaos IVR");   
-end
-
 function process_set_location()
    if (#arg ~= 3) then
       logError("process_location(): Wrong number of arguments.");
@@ -153,8 +143,6 @@ elseif (arg[1] == "VM_MENU") then
    process_vm_menu();
 elseif (arg[1] == "VM_CLI") then
    process_vm_cli();
-elseif (arg[1] == "CHAOS_IVR") then
-   process_chaos_ivr();
 elseif (arg[1] == "LOCATION_SET") then
    process_set_location();
 end

@@ -19,7 +19,7 @@ function get_mailbox(aLeg)
 	    return digits;
 	 else
 	    ivr.play(aLeg, VM.."extension.wav")
-	    number_phone(aLeg, digits);
+	    recite.phone_number(aLeg, digits);
 	    aLeg:sleep(500);
 	 end
       end

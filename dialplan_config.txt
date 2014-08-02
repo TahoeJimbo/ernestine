@@ -1,8 +1,8 @@
 
 -- Jim's do-not-disturb hours
 
-HOUR_BED  = 21;  -- 10pm
-HOUR_WAKE = 10;  --  9am
+HOUR_BED  = 21;  -- 9pm
+HOUR_WAKE = 08;  -- 8am
 
 --
 -- Caller ID of last resort.  Used when the outbound dialplan can't figure
@@ -75,7 +75,8 @@ Extension{ id = "8104", dialstring = "cam-hillside"                        }    
 
 -- Extensions (POTS)
 
-Extension{ id = "8200", dialstring = "8200"                               }     -- Grandstream inbound
+Extension{ id = "8200", dialstring = "8200"                                }     -- Grandstream Analog FXS
+Extension{ id = "8201", dialstring = "8201"                                }     -- Grandstream Analog FXO (IN!)
 
 -- Extensions (Mobile)
 

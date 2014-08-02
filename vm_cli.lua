@@ -2,7 +2,7 @@
 --[[ ---MAINTENANCE MENU-----------------------------------------------------]]
 
 function vm_maint_cli()
-    local finshed = false
+    local finished = false
 
     repeat
         io.write("\nMenu\n\n")
@@ -53,7 +53,6 @@ function mailbox_get_number_from_cli()    --[[ MAILBOX_GET_NUMBER_FROM_CLI --]]
     local line
     local mailbox
     local mailbox_valid = false
-    local status
 
     repeat
         io.write("\nMailbox number: [return = abort]: ")
@@ -78,9 +77,7 @@ end
 function mailbox_edit_from_cli()                --[[ MAILBOX_EDIT_FROM_CLI --]]
 
     local cmd
-    local name
     local line
-    local password
 
     local finished = false
 
@@ -239,8 +236,6 @@ function mailbox_serial_from_cli()                     --[[ MAILBOX_SERIAL_FROM_
     local mailbox
     local mailbox_obj
     
-    local line
-
     mailbox = mailbox_get_number_from_cli()
 
     if (mailbox == "ABORT") then
@@ -280,14 +275,12 @@ function mailbox_serial_from_cli()                     --[[ MAILBOX_SERIAL_FROM_
         end
 
     until (done == true)
-
 end
 
 function show_status()
    -- for each mailbox, show information about the mailbox...
 
    local box_config
-   local key
    local mailbox_obj
 
    for key in pairs(config) do
@@ -313,7 +306,6 @@ end
 
 function repair_config()
    local box_config
-   local key
    local mailbox_obj
    local changes = 0;
 

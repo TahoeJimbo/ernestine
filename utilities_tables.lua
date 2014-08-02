@@ -15,7 +15,6 @@ function table_private.dump_recursive(theTable, indent)
    -- (And to not confuse the unit-test output comparator.)
 
    local sorted_keys = {}
-   local key
 
    for key in pairs(theTable) do sorted_keys[#sorted_keys + 1] = key; end
 
@@ -38,10 +37,7 @@ function table_private.dump_recursive(theTable, indent)
 end
 
 function table_dump(header, theTable)
-   local key, value;
-
    print(header);
-
    table_private.dump_recursive(theTable, 0)
 end
 

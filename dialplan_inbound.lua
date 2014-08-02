@@ -56,7 +56,6 @@ end
 
 function extension_546()
 
-   local extension = nil;
    local where = location.get("546")
 
    if (selectVoicemailGreeting("546") ~= 1) then
@@ -78,7 +77,6 @@ end
 
 function extension_JimWake()
 
-   local dialString = nil;
    local where = location.get("546")
    local extension = nil
 
@@ -97,7 +95,7 @@ function extension_JimWake()
       return extension
    end
 
-   logError("Failed to properly wake Jim: "..message)
+   logError("Failed to properly wake Jim: ")
    return nil
 end
 
@@ -125,6 +123,18 @@ function dispatch_internal(aLeg, destination_digits)
 
    if (destination_digits == "JimWake") then
       extension = extension_JimWake()
+   end
+
+   -- Pseudo extensions that bridge and don't return...
+
+   if (destination_digits == "*3246") then
+      echo_test(aLeg)
+      return
+   end
+
+   if (destination_digits == "*32463") then
+      echo_test_delayed(aLeg)
+      return
    end
 
    if extension == nil then 
@@ -180,10 +190,15 @@ function dispatch_external(aLeg, dest)
 
    -- TAHOE
 
-   if (dest == "15305231043") then
-      dispatch_internal(aLeg, "546");
+   if dest == "15305231043" then 
+      dispatch_internal(aLeg, "546")
+
+   elseif dest == "15305259155" then
+      aLeg:setVariable("sip_from_display", "55:"..callerIDName)
+      dispatch_internal(aLeg, "546")
+
    elseif (dest == "15305231044") then
-      dispatch_internal(aLeg, "JimDirectVM");
+      dispatch_internal(aLeg, "JimDirectVM")
 
    -- SCRUZ
 
@@ -193,7 +208,7 @@ function dispatch_external(aLeg, dest)
    -- EASTCLIFF
 
    elseif (dest == "18314658399") then
-      aLeg:setVariable("sip_from_display", "ECF: "..callerIDName);
+      aLeg:setVariable("sip_from_display", "ECF: "..callerIDName)
       dispatch_internal(aLeg, "546");
    end
 
@@ -213,6 +228,27 @@ function dispatch(aLeg, context, dest)
    end
 end
 
+function echo_test(aLeg)
+   aLeg:answer()
+   aLeg:sleep(500)
+   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echotest.wav")
+   sounds.voicemail_beep(aLeg)
+   aLeg:execute("echo")
+   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echodone.wav")
+   aLeg:hangup()
+end
+
+function echo_test_delayed(aLeg)
+   aLeg:answer()
+   aLeg:sleep(500)
+   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echotest.wav")
+   sounds.voicemail_beep(aLeg)
+
+   aLeg:execute("echo_delay", 5000)
+   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echodone.wav")
+   aLeg:hangup()
+end
+
 -- ######
 --  MAIN
 -- ######
@@ -221,7 +257,7 @@ function dialplan_entrypoint_inbound(session, context, destination)
 
    logError("STARTING INTERNAL DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
-	    dispatch(aLeg, context, destination);
+	    dispatch(session, context, destination);
    logError("ENDING INTERNAL DIALPLAN: dest=<"..destination..">, "
 	                        .."context=<"..context..">");
 end
