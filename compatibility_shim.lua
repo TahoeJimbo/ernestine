@@ -41,7 +41,16 @@ function session.hangupCause(s)
    return "SUCCESS";
 end
 
---]]
+event = {}
+
+function event.addHeader(dummy,header, data)
+   logInfo("COMPAT: Event add header: "..header..", "..data)
+end
+
+function event.fire(dummy)
+   logInfo("COMPAT: Event fired")
+end
+
 
 freeswitch = {}
 
@@ -56,4 +65,9 @@ end
 
 function freeswitch.bridge(aLeg, bLeg)
    logInfo("COMPAT: BRIDGING")
+end
+
+function freeswitch.Event(event_string)
+   logInfo("COMPAT: EVENT "..event_string)
+   return event
 end

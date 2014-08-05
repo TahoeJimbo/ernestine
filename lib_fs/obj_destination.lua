@@ -120,7 +120,7 @@ end
 --     nil, "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
 --     nil, "NO ANSWER",  reason       The call was not answered in the time provided
 
-function Destination:PRIV_make_and_ring_endpoint(dialstring)
+function Destination:PRIV_make_and_ring_endpoint(aLeg, dialstring)
 
    local result
    local message
@@ -130,7 +130,7 @@ function Destination:PRIV_make_and_ring_endpoint(dialstring)
    
    if DEBUG then logInfo("Calling "..dialstring); end
 
-   local leg = freeswitch.Session(dialstring)
+   local leg = freeswitch.Session(dialstring, aLeg)
 
    -- We don't get this far until something difinitive happens with the
    -- session.
@@ -211,10 +211,12 @@ function Destination:PRIV_connect_freeswitch_style(source_session, alternate_dia
       return "FAILED", "Source session is not ready."
    end
 
+   aLeg:setVariable("continue_on_fail", "true")
+
    -- Create the b-leg and attempt a connection...  The make_and_ring
    -- call will not return until something difinitive happens.
 
-   local bLeg, status, message = self:PRIV_make_and_ring_endpoint(freeswitch_dialstring)
+   local bLeg, status, message = self:PRIV_make_and_ring_endpoint(aLeg,freeswitch_dialstring)
 
    if (bLeg == nil) then
       return status, message
@@ -227,11 +229,10 @@ function Destination:PRIV_connect_freeswitch_style(source_session, alternate_dia
       logInfo("dialplan.connect: A leg disappeared: "..aLegState)
       return "FAILED", "Source session disappeared while destination was connecting."
    end
-      
+
    -- Both legs are still alive here.
 
    freeswitch.bridge(aLeg, bLeg)
-
    hangupCause = bLeg:hangupCause()
    bLeg:destroy()
    aLeg:hangup()

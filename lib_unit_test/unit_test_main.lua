@@ -4,7 +4,7 @@ _ut_test_name = ""
 _ut_module_name = ""
 _ut_stop_on_fail = false
 UNIT_TESTING = true
-VERBOSE = true
+VERBOSE = false
 
 
 function PASS()
@@ -125,12 +125,15 @@ function COMPARE_TABLES(results, expected)
 end
 
 
-
 -- trundle through the global context looking for tables beginning with "_ut_"
+
+DEBUG = nil
 
 local test_modules = {}
 
 for key, value in pairs(_G) do
+   --   print("key = "..key..", kind = "..type(value))
+
    if key:sub(1,4) == "_ut_" and type(_G[key]) == "table" then
       test_modules[#test_modules + 1] = key
    end
@@ -144,6 +147,8 @@ table.sort(test_modules);
 for _, module_name in ipairs(test_modules) do
 
    _ut_module_name = module_name
+
+   print("Testing module: "..module_name)
 
    -- 
    -- Initialize it
@@ -185,8 +190,47 @@ for _, module_name in ipairs(test_modules) do
       
       if DEBUG then logInfo("Running "..test_name); end
 
-      test_function()
+      result = test_function()
+
    end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

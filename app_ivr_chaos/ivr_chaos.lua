@@ -50,12 +50,11 @@ function ivr_dispatch(aLeg, destination)
     -- Transfer or bridge?
     
     if (type == "T") then
-       local extension, context = subDialString:match("^(%d+),(.+)$");
-       dialplan_entrypoint_inbound(aLeg, private, extension);
+       aLeg:transfer(subDialString, "XML", "private")
     end
 
     if (type == "B") then
-       dialplan_entrypoint_outbound(aLeg, context, subDialString)
+       aLeg:transfer(subDialString, "XML", "private")
     end
 end
 

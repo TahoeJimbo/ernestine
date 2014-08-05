@@ -112,13 +112,21 @@ function route_to_carrier(aLeg, kind, destination_obj, outpulsed_number)
    end
 end
 
-function dispatch_outbound(aLeg, context, destination)
+function dispatch_outbound(aLeg, context, destination, forced_cid)
 
    local destination_obj = Destination:new()
 
    ------CHOOSE OUR OUTGOING CALLER ID VALUES------
 
-   local cid_name, cid_number = dialplan_get_outgoing_caller_id(aLeg)
+   local cid_name, cid_number
+   
+   if forced_cid == true then
+      cid_name = "Mary Smith"
+      cid_number = "19078419799"
+   else
+      cid_name, cid_number = dialplan_get_outgoing_caller_id(aLeg)
+   end
+
    destination_obj:set_source_caller_id(cid_name, cid_number)
 
    ------PARSE THE OUTBOUND NUMBER------

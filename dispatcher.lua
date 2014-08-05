@@ -2,37 +2,6 @@
 
 ----- DISPATCH ARGUMENTS -------------------------------------------------------
 
-function process_dialplan_inbound()
-   if (#arg ~= 3) then
-      logError("Wrong number of arguments.");
-      return;
-   end
-
-   local extension = arg[2];
-   local context = arg[3];
-
-   logError("Starting dialplan: Extension "..extension
-	    ..", Context: "..context);
-   dialplan_entrypoint_inbound(session, context, extension);
-   logError("Finishing dialplan: Extension "..extension
-	    ..", Context: "..context);
-end
-
-function process_dialplan_outbound()
-   if (#arg ~= 3) then
-      logError("Wrong number of arguments.");
-      return;
-   end
-
-   local extension = arg[2];
-   local context = arg[3];
-
-   logError("Starting dialplan: Extension "..extension
-	    ..", Context: "..context);
-   dialplan_entrypoint_outbound(session, context, extension);
-   logError("Finishing dialplan: Extension "..extension
-	    ..", Context: "..context);
-end
 
 function process_vm_record()
    if (#arg ~= 3) then

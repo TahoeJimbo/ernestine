@@ -496,7 +496,7 @@ function recite.relative_date(leg, secondsSinceEpoch)
       recite.ordinal(leg, current_localtime_parts["day"]);
    end
 
-   aLeg:sleep(300);
+   leg:sleep(300);
 
    -- Now the time...
 

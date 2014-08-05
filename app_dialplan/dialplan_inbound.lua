@@ -81,18 +81,15 @@ function extension_JimWake()
    local extension = nil
 
    if (where == kTAHOE) then
-      extension = extensions["JimWakeTahoe"];
-
-   elseif (where == kOUTSIDE) then
-      extension = extensions["JimWakeOutside"];
-
-   elseif (where == kSCRUZ) then
-      extension = extensions["JimWakeScruz"];
+      return extensions["JimWakeTahoe"];
    end
-   
-   if extension then
-      ivr.play(aLeg, SOUNDS.."Custom/ill-try-to-wake-him.wav");
-      return extension
+
+   if (where == kOUTSIDE) then
+      return extensions["JimWakeOutside"];
+   end
+
+   if (where == kSCRUZ) then
+      return  extensions["JimWakeScruz"];
    end
 
    logError("Failed to properly wake Jim: ")
@@ -114,17 +111,6 @@ function dispatch_internal(aLeg, destination_digits)
       excluded_extension = source_extension_digits
    end
 
-   -- Pseudo extensions with custom logic  (location, or special hunting)
-   -- They'll return an extension object we should use, or nil if not.
-
-   if (destination_digits == "546") then
-      extension = extension_546()
-   end
-
-   if (destination_digits == "JimWake") then
-      extension = extension_JimWake()
-   end
-
    -- Pseudo extensions that bridge and don't return...
 
    if (destination_digits == "*3246") then
@@ -135,6 +121,26 @@ function dispatch_internal(aLeg, destination_digits)
    if (destination_digits == "*32463") then
       echo_test_delayed(aLeg)
       return
+   end
+
+   if destination_digits:sub(1,2) == "*4"  then       -- Use fake caller id.
+      destination_digits = destination_digits:sub(3, #destination_digits)
+      dispatch_outbound(aLeg, "private", destination_digits, true)
+   end
+
+   -- Pseudo extensions with custom logic  (location, or special hunting)
+   -- They'll return an extension object we should use, or nil if not.
+
+   if (destination_digits == "546") then
+      extension = extension_546()
+   end
+
+   if (destination_digits == "JimWake") then
+      extension = extension_JimWake()
+
+      if extension then
+	 ivr.play(aLeg, SOUNDS.."Custom/ill-try-to-wake-him.wav");
+      end
    end
 
    if extension == nil then 
@@ -174,8 +180,13 @@ function dispatch_internal(aLeg, destination_digits)
       
       aLeg:setVariable("X-vm_extension", extension);
       aLeg:setVariable("X-vm_greeting", greeting);
-      
-      vm_record_entrypoint(aLeg, extension, greeting);
+
+      aLeg:setAutoHangup(false)
+
+      aLeg:execute("lua", "voicemail record "..extension.." "..greeting)
+--      aLeg:execute("transfer", "XML vm-record");
+--      aLeg:transfer("XML", "", "private")
+--      vm_record_entrypoint(aLeg, extension, greeting);
       return
    else
       logError("Failed to connect "..source_extension_digits.." to "..extension.dialstring..": "..message)
@@ -186,7 +197,19 @@ end
 
 function dispatch_external(aLeg, dest)
 
-   local callerIDName = aLeg:getVariable("sip_from_display");
+   aLeg:execute("info")
+
+   local caller_id_name = aLeg:getVariable("sip_from_display");
+   
+   if (caller_id_name == nil) then
+      caller_id_name = aLeg:getVariable("sip_from_user_stripped");
+      if caller_id_name ~= nil then aLeg:setVariable("sip_from_display", caller_id_name); end
+   end
+
+   if (caller_id_name == nil) then
+      caller_id_name = "[No ID Provided]"
+      aLeg:setVariable("sip_from_display", caller_id_name);
+   end
 
    -- TAHOE
 
@@ -194,7 +217,7 @@ function dispatch_external(aLeg, dest)
       dispatch_internal(aLeg, "546")
 
    elseif dest == "15305259155" then
-      aLeg:setVariable("sip_from_display", "55:"..callerIDName)
+      aLeg:setVariable("sip_from_display", "55:"..caller_id_name)
       dispatch_internal(aLeg, "546")
 
    elseif (dest == "15305231044") then
@@ -208,7 +231,7 @@ function dispatch_external(aLeg, dest)
    -- EASTCLIFF
 
    elseif (dest == "18314658399") then
-      aLeg:setVariable("sip_from_display", "ECF: "..callerIDName)
+      aLeg:setVariable("sip_from_display", "ECF: "..caller_id_name)
       dispatch_internal(aLeg, "546");
    end
 

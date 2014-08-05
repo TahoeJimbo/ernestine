@@ -2,7 +2,6 @@
 _ut_Dialstring = {}
 
 function _ut_Dialstring.init()
-   DEBUG = nil
    if DEBUG then logInfo("Intializing dialstring tests."); end
 end
 
