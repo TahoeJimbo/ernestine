@@ -184,9 +184,6 @@ function dispatch_internal(aLeg, destination_digits)
       aLeg:setAutoHangup(false)
 
       aLeg:execute("lua", "voicemail record "..extension.." "..greeting)
---      aLeg:execute("transfer", "XML vm-record");
---      aLeg:transfer("XML", "", "private")
---      vm_record_entrypoint(aLeg, extension, greeting);
       return
    else
       logError("Failed to connect "..source_extension_digits.." to "..extension.dialstring..": "..message)
@@ -197,6 +194,7 @@ end
 
 function dispatch_external(aLeg, dest)
 
+   if DEBUG then logInfo("Dispatching "..dest.." to external dialplan processor."); end
    aLeg:execute("info")
 
    local caller_id_name = aLeg:getVariable("sip_from_display");
@@ -211,30 +209,52 @@ function dispatch_external(aLeg, dest)
       aLeg:setVariable("sip_from_display", caller_id_name);
    end
 
+   local caller_id_number = aLeg:getVariable("sip_from_user_stripped");
+
+   -- Sanity check
+
+   if dest:sub(1,2) == "+1" or dest:sub(1,1) == "1" then
+      --
+      -- Success!
+      --
+   else
+      logError("Invalid destination number: "..dest)
+      sounds.sit(aLeg, "intercept")
+      return
+   end
+
+   if (dest:sub(1,1) == "+") then
+      dest = dest:sub(2, #dest)
+   end
+
+   logError("Processing call from <"..caller_id_name..">/<"..caller_id_number.."> to <"..dest..">")
+
    -- TAHOE
 
    if dest == "15305231043" then 
       dispatch_internal(aLeg, "546")
-
+      return
    elseif dest == "15305259155" then
       aLeg:setVariable("sip_from_display", "55:"..caller_id_name)
       dispatch_internal(aLeg, "546")
-
+      return
    elseif (dest == "15305231044") then
       dispatch_internal(aLeg, "JimDirectVM")
-
+      return
    -- SCRUZ
 
    elseif (dest == "18314650752") then
      dispatch_internal(aLeg, "546");
-
+     return
    -- EASTCLIFF
 
    elseif (dest == "18314658399") then
       aLeg:setVariable("sip_from_display", "ECF: "..caller_id_name)
       dispatch_internal(aLeg, "546");
+      return
    end
 
+   logError("No incoming DIDs match: "..dest)
    sounds.sit(aLeg, "intercept");
 end
 

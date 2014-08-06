@@ -47,12 +47,12 @@ default_many_handsets = false
 
 -- Hunt groups, called from the dialplan_inbound.lua script.
 
-Extension{ id = "JimTahoe",     dialstring = "wait=30|8001:8003:4001|VM(546)"   }    -- At the lake hunt group
-Extension{ id = "JimScruz",     dialstring = "wait=30:4001|VM(546)"        }    -- In santa cruz hunt group
-Extension{ id = "JimOutside",   dialstring = "wait=30:4001|VM(546)"        }    -- Out and about hunt group
+Extension{ id = "JimTahoe",     dialstring = "wait=30|8001:8002:8003|VM(546)"   }    -- At the lake hunt group
+Extension{ id = "JimScruz",     dialstring = "wait=30|4001|VM(546)"        }    -- In santa cruz hunt group
+Extension{ id = "JimOutside",   dialstring = "wait=30|7001|4001|VM(546)"   }    -- Out and about hunt group
 
-Extension{ id = "JimWakeTahoe", dialstring = "wait=30|8001:4001|VM(546)"   }    -- At the lake emergency
-Extension{ id = "JimWakeScruz", dialstring = "wait=30:7001|VM(546)"        }    -- In santa cruz emergency
+Extension{ id = "JimWakeTahoe", dialstring = "8001:8002:8003:4001"         }    -- At the lake emergency, ring forever.
+Extension{ id = "JimWakeScruz", dialstring = "7001|4001"                   }    -- In santa cruz emergency, ring forever.
 
 Extension{ id = "JimDirectVM",  dialstring = "VM(546)"                     }    -- Direct to voicemail
 
