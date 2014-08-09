@@ -1,4 +1,4 @@
-freeswitch-router
+## freeswitch-router
 =================
 
 While largely specific to my situation, this LUA code is "generic enough" to be helpful to
@@ -12,7 +12,7 @@ which extensions to ring, in what order, and what should happen if nobody answer
 
 For example:
 
-  "wait=30|8000:8001:8002|4000:wait=60,4001|VM(8000)"
+    "wait=30|8000:8001:8002|4000:wait=60,4001|VM(8000)"
   
 Translates to "ring 8001, 8001, 8002 at the same time.  If nobody answers after 30 seconds
 then ring 4000 and 4001.  Give 4001 a fill minute to answer.  If nobody answers, send to
@@ -21,3 +21,12 @@ voicemail box 8000.
 The "Destination" object can work from a "Dialstring" or a standard freeswitch or sofia (SIP) dialstring and
 manages the process of ringing and connecting the calling party to the destination, or returning a simple
 code and an error message explaining why it couldn't.
+
+### Other Stuff
+
+The diaplan processor `dialplan_*.lua` reads the `diaplan_config.txt` file, containing easily 
+configurable extensions and routing patterns.  For example
+
+```
+Example to come
+```
