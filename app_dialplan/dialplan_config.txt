@@ -14,8 +14,54 @@ CALLER_ID_NUMBER_LAST_RESORT = "5305231043"
 
 LOCAL_AREA_CODE = "530"
 
+--[[
+----------OUTBOUND GATEWAYS----------
 
-----------EXTENSION DEFINITIONS-----------
+-- dialing formats: 
+--    
+-- %n = just the bare digits.  A leading + is dropped, if present.
+-- %p = the dialed digits, including the leading + if present.
+--
+
+Gateway {
+          name = "grandstream-tahoe",
+          freeswitch_profile = "public::grandstream-tahoe"
+	  outbound_format = "%n"
+	  inbound_format = "%n"
+        }
+
+Gateway {
+          name = "flowroute",
+	  freeswitch_profile = "public::flowroute"
+	  outbound_format = "%n"
+	  inbound_format = "%p"
+        }
+
+Gateway {
+          name = "callcentric-tahoe",
+	  freeswitch_profile = "public::callcentric-tahoe"
+	  outbound_format = "%n"
+	  inbound_format = "%n"
+        }
+
+Gateway {
+          name = "callcentric-scruz",
+	  freeswitch_profile = "public::callcentric-scruz"
+	  outbound_format = "%n"
+	  inbound_format = "%n"
+        }
+
+----------E911 Configuration----------
+
+E911 { name="Tahoe", outbound_cid="15305231043",
+       gateways = { grandstream-tahoe, flowroute }
+     }
+
+E911 { name="Scruz", outbound_cid="18314650752" }
+
+--]]
+
+----------EXTENSION DEFINITIONS----------
 
 -- A fully qualified extension looks like this:  (** = required)
 --
