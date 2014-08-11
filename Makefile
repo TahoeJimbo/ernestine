@@ -2,6 +2,8 @@
 TARGETS = lib_fs lib_lua lib_voicemail lib_unit_test \
 	  app_dialplan app_voicemail app_voicemail_cli app_unit_tests app_ivr_chaos
 
+FREESWITCH = /usr/local/freeswitch
+
 FS_INSTALL_TARGETS = dialplan dialplan_config.txt \
 		     voicemail \
 		     voicemail_cli \
@@ -40,7 +42,7 @@ install:
 	@echo "Staging:"
 	@for FS_TARGET in ${FS_INSTALL_TARGETS} ; do \
 	echo "   $${FS_TARGET}" ; \
-	cp bin/$${FS_TARGET} /fs/scripts ; \
+	cp bin/$${FS_TARGET} ${FREESWITCH}/scripts ; \
 	done
 	@echo ""
 
