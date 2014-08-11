@@ -231,7 +231,7 @@ function dispatch_external(aLeg, dest)
 
    -- TAHOE
 
-   if dest == "15305231043" then 
+   if dest == "15305231043" or "15305233073" then 
       dispatch_internal(aLeg, "546")
       return
    elseif dest == "15305259155" then

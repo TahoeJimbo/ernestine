@@ -20,6 +20,12 @@ D  = Number of "to-do" disposition messages (same index as source message),
 
 --]]
 
+-- To rejigger SNOM e-mail LED to light and disable the obnoxious blinking on missed calls:
+
+-- http://10.11.0.31/dummy.htm?settings=save&led_on=ON%20BUSY%20IN_A_CALL%20IN_A_MEETING%20HOLDING%20DND%20UNAVAILABLE%20ACTIVE%20INACTIVE%20AWAY%20AVAILABLE%20PhoneHasCall%20CurrentIdentityHasVoiceMessages
+-- http://10.11.0.31/dummy.htm?settings=save&led_call_indicator_usage=PhoneHasCallInStateRinging%20PhoneHasCall
+-- http://10.11.0.31/dummy.htm?settings=save&led_message_usage=CurrentIdentityHasVoiceMessages
+
 -----MAILBOX PRIMITIVES--------------------------------------------------------
 
 debug_mailbox = true
@@ -54,7 +60,7 @@ function mailbox.update_mwi(mailbox_obj)
 			 mailbox_obj.S.." (0/0)")
       end
       event:addHeader("MWI-Message-Account", "sip:"..
-		      extension_string.."@10.11.0.3")
+		      extension_string.."@10.11.0.3")   -- FIXME: THIS SHOULD NOT BE HARDCODED
 
       event:fire()
    end

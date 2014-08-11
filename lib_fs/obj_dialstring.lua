@@ -355,7 +355,13 @@ function Dialstring:PRIV_merge_variables(global_variables, local_variables)
       merged_variable_string = "[";
       
       for _, key in ipairs(sorted_variable_names) do
-	 merged_variable_string = merged_variable_string..key.."="..merged_variables[key];
+	 local value = merged_variables[key]
+	 
+	 if value:find("[%s,]") ~= nil then
+		value = "'"..value.."'"
+	 end
+
+	 merged_variable_string = merged_variable_string..key.."="..value
 	 argument_count = argument_count + 1
 	 if (argument_count ~= count) then
 	    merged_variable_string = merged_variable_string..",";
