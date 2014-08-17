@@ -1,0 +1,6 @@
+
+TODO:
+
+Modify dialstring VM processor to understand greeting numbers
+Modify dialstring processer to understand IF_LOC and IF_TIME
+Modify dialstring processor to allow control flow changes.
