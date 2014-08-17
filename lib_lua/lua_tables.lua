@@ -22,15 +22,25 @@ function table_private.dump_recursive(theTable, indent)
    
    for _, key in ipairs(sorted_keys) do
       local value = theTable[key]
+      local indentString = table_private.spaces:sub(1, indent * 3)
 
       if (value == nil) then value = "(nil)"; end
 
       if type(value) == "table" then
-	 local indentString = table_private.spaces:sub(1, indent * 3)
-	 print(indentString..key.." is a table:")
-	 table_private.dump_recursive(value, indent + 1)
+
+	 if (key ~= "__index") then 
+	    print(indentString..key.." is a table:")
+	    table_private.dump_recursive(value, indent + 1)
+	 else
+	    print(indentString..key.." is an __index table. Skipping.")
+	 end
+      elseif type(value) == "function" then
+	 print(indentString..key.." is a function.")
+      elseif type(value) == "boolean" then
+	 local boolString
+	 if value == true then boolString = "true"; else boolString = "false"; end
+	 print(indentString..key.."\t"..boolString)
       else
-	 local indentString = table_private.spaces:sub(1,indent * 3)
 	 print(indentString..key.."\t"..value)
       end
    end

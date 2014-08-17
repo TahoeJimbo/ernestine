@@ -4,23 +4,27 @@ Dialstring = {}
 
 --[[
 
-   Dialstring:new_custom(custom_dialstring)            -- Creates a dialstring object ready to parse
-                                                       -- using a custom destination dialstring
+   Dialstring:new_custom(custom_dialstring)          -- Creates a dialstring object
+                                                     -- ready to parse using a custom
+                                                     -- destination dialstring
 
-   Dialstring:new_freeswitch(freeswitch_dialstring)    -- Creates a dialstring object with the 
-                                                       -- pre-parsed freeswitch dialstring
+   Dialstring:new_freeswitch(freeswitch_dialstring)  -- Creates a dialstring object with
+                                                     -- the pre-parsed freeswitch
+                                                     -- dialstring
 
-   Dialstring:now_sofia(sofia_endpoint)                -- Creates a dialstring object with the
-                                                       -- provided sofia endpoint string
+   Dialstring:now_sofia(sofia_endpoint)              -- Creates a dialstring object with
+                                                     -- the provided sofia endpoint 
+                                                     -- string
 
-   Dialstring:get()                                    -- Parses the dialstring, adding variables
-                                                       -- to it (custom or sofia only)
-                                                       -- returning it to the caller.
+   Dialstring:get()                                  -- Parses the dialstring, adding
+                                                     -- variables to it (custom or sofia
+                                                     -- only) returning it to the caller.
 
-   Dialstring:set_variable(variable_name, value)       -- Sets a custom variable to be
-                                                       -- used by all endpoints in the dialstring
-                                                       -- (like "origination_caller_id_number", for
-                                                       -- example.
+   Dialstring:set_variable(variable_name, value)     -- Sets a custom variable to be
+                                                     -- used by all endpoints in the
+                                                     -- dialstring (like
+                                                     -- "origination_caller_id_number",
+                                                     -- for example.
 ]]--
 
 --
@@ -68,7 +72,9 @@ end
 
 function Dialstring:new_custom(custom_dialstring)
 
-   if DEBUG then logInfo("Created new custom dialstring object for <"..custom_dialstring..">"); end
+   if DEBUG_DIALSTRING then
+      logInfo("Created new custom dialstring object for <"..custom_dialstring..">")
+   end
 
    local object = Dialstring:new()
    object.custom_dialstring = custom_dialstring
@@ -78,7 +84,9 @@ end
 
 function Dialstring:new_freeswitch(fs_dialstring)
 
-   if DEBUG then logInfo("Created new freeswitch dialstring object for <"..fs_dialstring..">"); end
+   if DEBUG_DIALSTRING then
+      logInfo("Created new freeswitch dialstring object for <"..fs_dialstring..">")
+   end
 
    local object = Dialstring:new()
    object.freeswitch_dialstring = fs_dialstring
@@ -88,7 +96,9 @@ end
 
 function Dialstring:new_sofia(sofia_dialstring)
 
-   if DEBUG then logInfo("Created new sofia dialstring object for <"..sofia_dialstring..">"); end
+   if DEBUG_DIALSTRING then
+      logInfo("Created new sofia dialstring object for <"..sofia_dialstring..">")
+   end
 
    local object = Dialstring:new()
    object.sofia_dialstring = sofia_dialstring
@@ -107,7 +117,10 @@ function Dialstring:set_excluded_extension(excluded_extension)
 end
 
 function Dialstring:set_variable(name, value)
-   if DEBUG then logInfo("Setting variable <"..name.."> to <"..value..">"); end
+   if DEBUG_DIALSTRING then 
+      logInfo("Setting variable <"..name.."> to <"..value..">")
+   end
+
    self.additional_vars[name] = value
    self.parsed_dialstring = nil
 end
@@ -126,7 +139,9 @@ end
 
 function Dialstring:get()
    if (self.parsed_dialstring) then
-      if DEBUG then logInfo("Returning cached dialstring: <"..self.parsed_dialstring..">"); end
+      if DEBUG_DIALSTRING then
+	 logInfo("Returning cached dialstring: <"..self.parsed_dialstring..">")
+      end
       return self.parsed_dialstring
    end
 
@@ -207,7 +222,9 @@ function Dialstring:PRIV_parse_custom()
 
    excluded_extension = self.excluded_extension or ""
 
-   if DEBUG then logInfo("Parsing <"..dialstring..">, excluding <"..excluded_extension..">"); end
+   if DEBUG_DIALSTRING then
+      logInfo("Parsing <"..dialstring..">, excluding <"..excluded_extension..">")
+   end
 
    local global_variables = {};
 
@@ -244,7 +261,10 @@ function Dialstring:PRIV_parse_custom()
 	       result.kind = "FU_VM"
 	       result.dialstring = extension
 	       
-	       if DEBUG then logInfo("Voicemil Extension "..extension); end
+	       if DEBUG_DIALSTRING then
+		  logInfo("Voicemil Extension "..extension)
+	       end
+
 	       global_variables._FUNCTION_NAME = nil
 	       
 	       table_append(results, result)
@@ -266,7 +286,7 @@ function Dialstring:PRIV_parse_custom()
       return nil
    end
 
-   if DEBUG then table_dump("Dialstring table", results); end
+   if DEBUG_DIALSTRING then table_dump("Dialstring table", results); end
 
    self.cached_dialstring = results
    return results;
@@ -288,7 +308,7 @@ end
 --
 function Dialstring:PRIV_process_variable(variable, variables)
 
-   if (DEBUG) then table_dump("Callvars before:", variables); end
+   if DEBUG_DIALSTRING then table_dump("Callvars before:", variables); end
 
    local parts = string_split(variable, "=");
 
@@ -298,7 +318,7 @@ function Dialstring:PRIV_process_variable(variable, variables)
       end
    end
 
-   if (DEBUG) then table_dump("Callvars after", variables); end
+   if DEBUG_DIALSTRING then table_dump("Callvars after", variables); end
 end
 
 function Dialstring:PRIV_merge_variables(global_variables, local_variables)
@@ -416,8 +436,10 @@ function Dialstring:PRIV_process_extension(extension_string, global_variables)
    local default_domain = self.default_domain or ""
    local excluded_extension = self.excluded_extension or ""
 
-   if DEBUG then logInfo("Processing <"..extension_string.."> excluding <"..excluded_extension
-			    .."> in domain <"..default_domain..">"); end
+   if DEBUG_DIALSTRING then
+      logInfo("Processing <"..extension_string.."> excluding <"..excluded_extension
+			    .."> in domain <"..default_domain..">")
+   end
 
    -- Split the extension into fragments
 
@@ -426,7 +448,8 @@ function Dialstring:PRIV_process_extension(extension_string, global_variables)
    if (#parts == 1) then
       -- Only one part.  Could be a global or a function
 
-      local result = self:PRIV_process_singleton_extension_part(parts[1], global_variables)
+      local result = self:PRIV_process_singleton_extension_part(parts[1],
+								global_variables)
 
       if result then return result; end
    end
@@ -491,7 +514,7 @@ function Dialstring:PRIV_process_block(block, global_variables)
 -- 1. Break the block into : separated extensions
 -- 2. Process the : separated units.
 
-   if (DEBUG) then
+   if DEBUG_DIALSTRING then
       logInfo("Processing <"..block..">")
    end
 
@@ -501,9 +524,12 @@ function Dialstring:PRIV_process_block(block, global_variables)
    extensions = string_split(block, ":");
 
    for _,extension_string in ipairs(extensions) do
-      if (DEBUG) then logInfo("Processing extension <"..extension_string..">"); end
+      if DEBUG_DIALSTRING then
+	 logInfo("Processing extension <"..extension_string..">")
+      end
 
-      local dialstring_part = self:PRIV_process_extension(extension_string, global_variables)
+      local dialstring_part = self:PRIV_process_extension(extension_string,
+							  global_variables)
       if (dialstring_part ~= "") then
 
 	 if (dialstring ~= "") then
@@ -513,7 +539,7 @@ function Dialstring:PRIV_process_block(block, global_variables)
 	 dialstring = dialstring..dialstring_part;
       end
    end
-   if (DEBUG) then logInfo("Returning <"..dialstring..">"); end
+   if DEBUG_DIALSTRING then logInfo("Returning <"..dialstring..">"); end
    return dialstring;
 end
 

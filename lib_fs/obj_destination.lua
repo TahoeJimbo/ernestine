@@ -16,15 +16,15 @@ outgoing_caller_id_name
 --]]
 
 function Destination:new()
-   object = {}
+   local object = {}
    setmetatable(object, self)
    self.__index = self
 
-   self.source_caller_id_name = nil
-   self.source_caller_id_number = nil
+   object.source_caller_id_name = nil
+   object.source_caller_id_number = nil
 
-   self.kind = ""
-   self.domain = ""
+   object.kind = ""
+   object.domain = ""
 
    return object
 end
@@ -76,21 +76,23 @@ end
 --
 -- Returns a tuple of (result (String), reason (String))
 --
---  "FAILED",     reason       The origination failed for the given reason
---  "COMPLETED",   message     The call was answered and ended normally
---  "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
---  "NO ANSWER",  reason       The call was not answered in the time provided
+--  "FAILED",     reason    The origination failed for the given reason
+--  "COMPLETED",  message   The call was answered and ended normally
+--  "BUSY",       reason    The subscriber is using their phone or is otherwise engaged
+--  "NO ANSWER",  reason    The call was not answered in the time provided
 
 function Destination:connect(source_session)
    
    self.dialstring:set_excluded_extension(self.excluded_extension)
 
    if (self.source_caller_id_name) then
-      self.dialstring:set_variable("origination_caller_id_name", self.source_caller_id_name)
+      self.dialstring:set_variable("origination_caller_id_name",
+				   self.source_caller_id_name)
    end
 
    if (self.source_caller_id_number) then
-      self.dialstring:set_variable("origination_caller_id_number", self.source_caller_id_number)
+      self.dialstring:set_variable("origination_caller_id_number",
+				   self.source_caller_id_number)
    end
    
    if (self.domain and self.domain ~= "") then
@@ -110,15 +112,30 @@ function Destination:connect(source_session)
    end
 end
 
+function Destination:description()
+
+   local d_kind = self.kind or "[?]"
+   local d_ds
+
+   if self.dialstring then
+      d_ds = self.dialstring:description()
+   else
+      d_ds = "[?]"
+   end
+
+   return d_kind.." destination: "..d_ds
+end
+
 
 -- Attempt to ring a dial-string until it is answered or not. :-)
 --
 -- Returns a tuple of (session (FreeSwitch session), result (String), reason (String))
 --
---     nil, "FAILED",     reason       The origination failed for the given reason
--- session, "ANSWERED",   message      The call was answered
---     nil, "BUSY",       reason       The subscriber is using their phone or is otherwise engaged
---     nil, "NO ANSWER",  reason       The call was not answered in the time provided
+--     nil, "FAILED",     reason    The origination failed for the given reason
+-- session, "ANSWERED",   message   The call was answered
+--     nil, "BUSY",       reason    The subscriber is using their phone or is
+--                                  otherwise engaged
+--     nil, "NO ANSWER",  reason    The call was not answered in the time provided
 
 function Destination:PRIV_make_and_ring_endpoint(aLeg, dialstring)
 
@@ -143,9 +160,12 @@ function Destination:PRIV_make_and_ring_endpoint(aLeg, dialstring)
    hangupState = leg:hangupCause()
    disposition = leg:getVariable("endpoint_disposition")
 
-   if DEBUG then logInfo("Received hangup state: "..hangupState.." and disposition "..disposition); end
+   if DEBUG then logInfo("Received hangup state: "..hangupState
+			 .." and disposition "..disposition); end
 
-   if hangupState == "SUCCESS" and (disposition == "ANSWER" or disposition == "EARLY MEDIA") then 
+   if hangupState == "SUCCESS"
+      and (disposition == "ANSWER" or disposition == "EARLY MEDIA") then 
+
       result = "ANSWERED"
       message = "The call was answered."
       if DEBUG then logInfo(result..": "..message); end
@@ -216,7 +236,8 @@ function Destination:PRIV_connect_freeswitch_style(source_session, alternate_dia
    -- Create the b-leg and attempt a connection...  The make_and_ring
    -- call will not return until something difinitive happens.
 
-   local bLeg, status, message = self:PRIV_make_and_ring_endpoint(aLeg,freeswitch_dialstring)
+   local bLeg, status, message = self:PRIV_make_and_ring_endpoint(aLeg,
+								  freeswitch_dialstring)
 
    if (bLeg == nil) then
       return status, message
@@ -266,10 +287,12 @@ function Destination:PRIV_connect_custom_style(source_session)
 
    results = self.dialstring:get()
 
-   if DEBUG then logInfo("Starting custom connection to <"..self.dialstring:description()..">"); end
+   if DEBUG then logInfo("Starting custom connection to <"
+			 ..self.dialstring:description()..">"); end
 
    if (results == nil) then
-      return "FAILED", "No destinations could be found for the custom dialstring <"..self.dialstring:description()..">"
+      return "FAILED", "No destinations could be found for the custom dialstring <"
+	               ..self.dialstring:description()..">"
    end
 
    local last_result
@@ -293,7 +316,8 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 --
 	 -- Try to connect the call to this dialstring
 	 --
-	 local result, message = self:PRIV_connect_freeswitch_style(source_session, dialstring)
+	 local result, message = self:PRIV_connect_freeswitch_style(source_session,
+								    dialstring)
 
 	 if result == "COMPLETED" then
 	    -- YAY!  DONE!

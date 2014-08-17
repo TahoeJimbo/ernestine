@@ -69,6 +69,14 @@
 ]]--
 
 
+local dialplan_parser_config = {
+   { group_name = "Location",           keywords = g_location_parser_keywords  },
+   { group_name = "Gateway",            keywords = g_gateway_parser_keywords   },
+   { group_name = "Gateway_Defaults",   keywords = g_gateway_defaults_keywords },
+   { group_name = "Route",              keywords = g_route_parser_keywords     },
+   { group_name = "Route_Defaults",     keywords = g_route_defaults_keywords   },
+}
+
 function process_dialplan_inbound(extension, context)
 
    logError("Starting dialplan: Extension "..extension
@@ -101,17 +109,6 @@ end
 -- GATHER SOME INITIAL DATA
 -- and turn them into global variables.
 
-if (session) then
-   caller_id_name = session:getVariable("caller_id_name")
-   caller_id_number = session:getVariable("caller_id_number")
-   caller_uuid = session:getVariable("uuid")
-   destination_number = session:getVariable("sip_to_user")
-
-   if (caller_id_name == nil) then caller_id_name="UNKNOWN" end
-   if (caller_id_number == nil) then caller_id_name="UNKNOWN" end
-   if (caller_uuid == nil) then caller_uuid="????" end
-end
-
 -- PROCESS ARGUMENTS
 
 if (argv) then
@@ -122,32 +119,60 @@ for key, value in ipairs(arg) do
    if DEBUG then logInfo("Arg: "..key.." = "..value); end
 end
 
---
--- Dialplan args
---
-
-if (#arg == 0) then
-   logError("No arguments.")
-   return;
-end
-
-location.load()
-
 if (#arg ~= 3) then
-   logError("Wrong number of arguments.")
+   logError("Expecting three arguments.")
    return
 end
 
-local extension = arg[2]
+local config_parser, error_message = Parser:new(SCRIPTS.."dialplan_config.txt",
+						dialplan_parser_config)
+
+if not config_parser then
+   logError("Cannot parse configuration file.")
+   return
+end
+
+--table_dump("Config array", config_parser.config_array)
+
+gLocations  = Location_ctrl:new(config_parser.config_array)
+gGateways   =  Gateway_ctrl:new(config_parser.config_array)
+gRoutes     =    Route_ctrl:new(config_parser.config_array)
+
+if gLocations == nil or gGateways == nil or gRoutes == nil then
+   logError("Error parsing configuration file.")
+   return
+end
+
+if (session) then
+   source_obj = Source:new(session)
+end
+
+
+--location.load()
+
+
+local destination_digits = arg[2]
 local context = arg[3]
 
 if (arg[1] == "inbound") then
-   dialplan_entrypoint_inbound(session, context, extension)
+   logError("STARTING INBOUND DIALPLAN: dest=<"..destination_digits..">, "
+	       .."context=<"..context..">");
+
+   dispatch_inbound(source_obj, context, destination_digits, nil)
+
+   logError("ENDING INBOUND DIALPLAN: dest=<"..destination_digits..">, "
+	       .."context=<"..context..">");
    return
 end
 
 if (arg[1] == "outbound") then
-   dialplan_entrypoint_outbound(session, context, extension)
+   logError("STARTING OUTBOUND DIALPLAN: dest=<"..destination_digits..">, "
+	       .."context=<"..context..">");
+
+   dispatch_outbound(source_obj, context, destination_digits, nil)
+
+   logError("ENDING OUTBOUND DIALPLAN: dest=<"..destination_digits..">, "
+	       .."context=<"..context..">");
    return
 end
 

@@ -4,32 +4,20 @@
 --[[ UTILITIES --]]
 
 
---
--- Extension file processor
---
 
-extensions = {}
 
-function Extension(ext)
-   if ext.id == nil then
-      logError("Extension's id must be set.")
-      return
+function dispatch_inbound(source_obj, context, destination_digits)
+
+   if (context == "private") then
+      dispatch_from_internal(fs_session, dest);
+   elseif (context == "public") then
+      dispatch_from_external(fs_session, dest);
+   else
+      logError("Invalid context <"..context..">")
+      sounds.sit(fs_session, "reorder-local");
    end
-
-   if ext.dialstring == nil then
-      logError("Extension's dialstring must be set.")
-   end
-
-   ext.domain = ext.domain or default_domain
-   ext.external_caller_id_name = ext.external_caller_id_name or default_external_caller_id_name
-   ext.external_caller_id_number = ext.external_caller_id_number or default_external_caller_id_number
-   ext.many_handsets = ext.many_handsets or default_many_handsets
-
-   extensions[ext.id] = ext
 end
 
-
-dofile(SCRIPTS.."dialplan_config.txt")
 
 --
 -- Returns 1 for the user's standard greeting
@@ -96,36 +84,27 @@ function extension_JimWake()
    return nil
 end
 
-function dispatch_internal(aLeg, destination_digits)
+-----------------------------------------------------------------------------------------
+-- Calls from internal extensions to internal extensions are handled here...
+-----------------------------------------------------------------------------------------
+
+function dispatch_from_internal(source_obj, destination_digits)
+
+   
 
    local source_extension_digits = aLeg:getVariable("sip_from_user_stripped");
    local excluded_extension
    local extension = nil
 
-   if DEBUG then logInfo("Connecting to <"..destination_digits.."> from <"..source_extension_digits..">"); end
+   if DEBUG then logInfo("Connecting to <"..destination_digits
+			 .."> from <"..source_extension_digits..">"); end
 
    local source_extension = extensions[source_extension_digits]
+
    if source_extension and source_extension.many_handsets == true then
       excluded_extension = ""
    else
       excluded_extension = source_extension_digits
-   end
-
-   -- Pseudo extensions that bridge and don't return...
-
-   if (destination_digits == "*3246") then
-      echo_test(aLeg)
-      return
-   end
-
-   if (destination_digits == "*32463") then
-      echo_test_delayed(aLeg)
-      return
-   end
-
-   if destination_digits:sub(1,2) == "*4"  then       -- Use fake caller id.
-      destination_digits = destination_digits:sub(3, #destination_digits)
-      dispatch_outbound(aLeg, "private", destination_digits, true)
    end
 
    -- Pseudo extensions with custom logic  (location, or special hunting)
@@ -258,49 +237,28 @@ function dispatch_external(aLeg, dest)
    sounds.sit(aLeg, "intercept");
 end
 
-function dispatch(aLeg, context, dest)
+--
+-- CALLABLE UTILITIES
+--
 
-   logInfo("dispatch({session}, "..dest..", "..context..")");
-
-   if (context == "private") then
-      dispatch_internal(aLeg, dest);
-   elseif (context == "public") then
-      dispatch_external(aLeg, dest);
-   else
-      sounds.sit(aLeg, "reorder-local");
-   end
+function DP_FUNC_echo_test(fs_session)
+   fs_session:answer()
+   fs_session:sleep(500)
+   ivr.play(fs_session, ANNOUNCEMENTS.."demo-echotest.wav")
+   sounds.voicemail_beep(fs_session)
+   fs_session:execute("echo")
+   ivr.play(fs_session, ANNOUNCEMENTS.."demo-echodone.wav")
+   ds_session:hangup()
 end
 
-function echo_test(aLeg)
-   aLeg:answer()
-   aLeg:sleep(500)
-   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echotest.wav")
-   sounds.voicemail_beep(aLeg)
-   aLeg:execute("echo")
-   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echodone.wav")
-   aLeg:hangup()
+function DP_FUNC_echo_test_delayed(fs_session)
+   fs_session:answer()
+   fs_session:sleep(500)
+   ivr.play(fs_session, ANNOUNCEMENTS.."demo-echotest.wav")
+   sounds.voicemail_beep(fs_session)
+
+   fs_session:execute("echo_delay", 5000)
+   ivr.play(fs_session, ANNOUNCEMENTS.."demo-echodone.wav")
+   fs_session:hangup()
 end
 
-function echo_test_delayed(aLeg)
-   aLeg:answer()
-   aLeg:sleep(500)
-   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echotest.wav")
-   sounds.voicemail_beep(aLeg)
-
-   aLeg:execute("echo_delay", 5000)
-   ivr.play(aLeg, ANNOUNCEMENTS.."demo-echodone.wav")
-   aLeg:hangup()
-end
-
--- ######
---  MAIN
--- ######
-
-function dialplan_entrypoint_inbound(session, context, destination)
-
-   logError("STARTING INTERNAL DIALPLAN: dest=<"..destination..">, "
-	                        .."context=<"..context..">");
-	    dispatch(session, context, destination);
-   logError("ENDING INTERNAL DIALPLAN: dest=<"..destination..">, "
-	                        .."context=<"..context..">");
-end

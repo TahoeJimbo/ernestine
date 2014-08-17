@@ -3,8 +3,12 @@
 _ut_test_name = ""
 _ut_module_name = ""
 _ut_stop_on_fail = false
+_ut_error_count = 0
+_ut_test_count = 0
+
 UNIT_TESTING = true
 VERBOSE = false
+
 
 
 function PASS()
@@ -18,6 +22,8 @@ function FAIL_BANNER()
 end
 
 function FAIL()
+   _ut_error_count = _ut_error_count + 1
+
    if _ut_stop_on_fail == true then
       error("Stopping after error(s).")
    end
@@ -99,7 +105,8 @@ function _ut_compare_tables_recursively(results, expected, depth)
       local results_value = results[results_key] or "[NIL]"
 
       if type(expected_value) == "table" and type(results_value) == "table" then
-	 local failed = _ut_compare_tables_recursively(results_value, expected_value, depth + 1)
+	 local failed = _ut_compare_tables_recursively(results_value, expected_value,
+						       depth + 1)
 	 if (failed == true) then
 	    print("Depth: "..depth..": Key: "..expected_key)
 	    return true
@@ -107,13 +114,15 @@ function _ut_compare_tables_recursively(results, expected, depth)
       elseif type(expected_value) ~= type(results_value) then
 	 FAIL_BANNER()
 	 print("Depth: "..depth..": Key: "..expected_key)	 
-	 print("Expected type <"..type(expected_value).."> and results type <"..type(results_value).."> are different.")
+	 print("Expected type <"..type(expected_value).."> and results type <"
+		  ..type(results_value).."> are different.")
 	 print("")
 	 return true;
       elseif (expected_value ~= results_value) then
 	 FAIL_BANNER()
 	 print("Depth: "..depth..": Key: "..expected_key)
-	 print("Expected value <"..expected_value.."> differs from result <"..results_value..">")
+	 print("Expected value <"..expected_value.."> differs from result <"
+		  ..results_value..">")
 	 return true
       end
    end
@@ -122,6 +131,32 @@ end
 function COMPARE_TABLES(results, expected)
    local failed = _ut_compare_tables_recursively(results, expected, 1)
    if (failed) then FAIL(); end
+end
+
+
+
+function COMPARE_FOR_NIL(results, expected_results)
+
+   if results == nil and expected_results == nil then
+      PASS()
+      return "PASS"
+   end
+
+   if results == nil and expected_results ~= nil then
+      FAIL_BANNER()
+      print("We were expecting a result, but got \"nil\" back instead.")
+      FAIL()
+      return "FAIL"
+   end
+
+   if results ~= nil and expected_results == nil then
+      FAIL_BANNER()
+      print("Got a result back, when we were expecting nil.")
+      FAIL()
+      return "FAIL"
+   end
+
+   return nil
 end
 
 
@@ -190,8 +225,12 @@ for _, module_name in ipairs(test_modules) do
       
       if DEBUG then logInfo("Running "..test_name); end
 
-      result = test_function()
+      test_function()
+      _ut_test_count = _ut_test_count + 1
+   end
 
+   if _ut_error_count > 0 then
+      error(_ut_error_count.." of ".._ut_test_count.." FAILED.")
    end
 end
 

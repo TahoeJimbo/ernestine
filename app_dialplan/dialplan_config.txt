@@ -1,145 +1,281 @@
 
--- Jim's do-not-disturb hours
+#----------------------------------------------------------------------------------------
+# SYSTEM LOCATIONS / EMERGENCY DIALING
+#
+# System locations are used to:
+#    * Selecting outgoing trunks for dialing, based on caller's location
+#    * Selecting the correct outgoing trunk or outgoing caller ID for 
+#      emergency calls so 911 information appears on the dispatcher's
+#      terminal
+#    * Selecting the numbering plan to be used for dialed external calls.
+#
+# The "id" defined for each location can be referenced in the "Gateway"
+# and "Extension" configuration groups.
+#
 
-HOUR_BED  = 21;  -- 9pm
-HOUR_WAKE = 08;  -- 8am
+Location {
+           id = "scruz"
+	   description = "Santa Cruz, CA"
+           
+	   numbering_plan = "NANPA"
+	   local_code = "831"
 
---
--- Caller ID of last resort.  Used when the outbound dialplan can't figure
--- what number to send.
---
+	   activation_code = "*7"    # "*S"
 
-CALLER_ID_NAME_LAST_RESORT = "Jim Hayes"
-CALLER_ID_NUMBER_LAST_RESORT = "5305231043"
+	   default_caller_id_name = "Jim Hayes (SCRUZ)"
+	   default_caller_id_number = "8314650752"
 
-LOCAL_AREA_CODE = "530"
+	   e911_id = "8314650752"
+         }
 
---[[
-----------OUTBOUND GATEWAYS----------
+Location {
+           id = "tahoe"
+	   description = "Lake Tahoe, CA"
 
--- dialing formats: 
---    
--- %n = just the bare digits.  A leading + is dropped, if present.
--- %p = the dialed digits, including the leading + if present.
---
+	   numbering_plan = "NANPA"
+           local_code = "530"
+
+	   default_caller_id_name = "Jim Hayes (TAHOE)"
+	   default_caller_id_number = "5305231043"
+
+	   activation_code = "*8"    # "*T"
+
+	   e911_id = "5305231043"
+         }
+
+Location {
+           id = "away"
+	   description = "Away from home"
+	   
+	   numbering_plan = "NANPA"
+	   local_code = ""
+
+	   default_caller_id_name = "Jim Hayes (TAHOE)"
+	   default_caller_id_number = "5305233073"
+
+	   activation_code = "*6"    #-- "*O"
+
+	   e911_id = "5305233073"
+         }
+
+#----------------------------------------------------------------------------------------
+# GATEWAYS
+#
+# Gateways define interfaces to other phone systems, most likely the
+# PSTN.  Gateway providers often differ in their requirements for 
+# outgoing numbers, so there are formatting options (think "printf()")
+# to massage the digits sent to a gateway.
+#
+# Formatting escapes:
+#   %r = just the bare dialed digits, no changes
+#   %c = the world-wide cannoical represention  (country code + number)
+#
+#   %a = the domestic area/city code.
+#   %l = the domestic local number.
+
+Gateway_Defaults {
+          domestic_numbering_plan = "NANPA"
+	  local_code = "530"
+
+	  outbound_emergency_format = "%l"
+	  outbound_service_format = "%l"
+	  outbound_local_format = "1%a%l"
+	  outbound_domestic_format = "1%a%l"
+
+
+	  outbound_intl_format = "+%c"
+
+	  allowed_call_kinds = "intl, domestic, local, service, emergency"
+        }
 
 Gateway {
-          name = "grandstream-tahoe",
+          name = "grandstream-tahoe"
           freeswitch_profile = "public::grandstream-tahoe"
-	  outbound_format = "%n"
-	  inbound_format = "%n"
+	  allowed_call_kinds = "service, emergency"
+
+          trunk_access_code = "*9"    #-- This allows direct access to the PSTN dialtone
+                                      #-- from internal callers.
+	  location = "tahoe"
+
+	  outbound_local_format = "%l"
+	  outbound_intl_format = "011%c"
         }
 
 Gateway {
-          name = "flowroute",
+          name = "flowroute"
 	  freeswitch_profile = "public::flowroute"
-	  outbound_format = "%n"
-	  inbound_format = "%p"
+
+	  outbound_prefix = "34197194*"
+          outbound_intl_format      = "%c"       #-- country code + number
         }
 
 Gateway {
-          name = "callcentric-tahoe",
+          name = "callcentric-tahoe"
 	  freeswitch_profile = "public::callcentric-tahoe"
-	  outbound_format = "%n"
-	  inbound_format = "%n"
+
+	  location = "tahoe"
         }
 
 Gateway {
-          name = "callcentric-scruz",
+          name = "callcentric-scruz"
 	  freeswitch_profile = "public::callcentric-scruz"
-	  outbound_format = "%n"
-	  inbound_format = "%n"
+
+	  location = "scruz"
         }
 
-----------E911 Configuration----------
+#----------------------------------------------------------------------------------------
+# ROUTING
+#
+# Routing takes a "source" call and bridges it with whatever the user dialed.
+#
+# Routing can be applied to inbound/outbound calls from private or public sources
+# 
+# "inbound/public" describes a call arriving from the PSTN, to a DID number.
+# "inbound/private" describes a call dialed internally, for an internal destination
+#
+# outbound/public = Not supported
+# outbound/private = describes a call dialed internally, to a PSTN number.
+#
 
-E911 { name="Tahoe", outbound_cid="15305231043",
-       gateways = { grandstream-tahoe, flowroute }
-     }
+#
+# INBOUND/PUBLIC DID ROUTES
+#
 
-E911 { name="Scruz", outbound_cid="18314650752" }
+Route_Defaults {
+	kind = "inbound/public"	
+	location = "tahoe"
+	domain = "10.11.0.3"
+}
 
---]]
+Route {
+     id = "15305231043"
+     description = "Tahoe Main Number"
 
-----------EXTENSION DEFINITIONS----------
+     route = "Jim"
+}   
 
--- A fully qualified extension looks like this:  (** = required)
---
--- Extension{
---   ** id = "sip_user_part"               
---      domain = "dip_domain_port"
---   ** dialstring = "dialstring pattern" 
---      external_caller_id_name = "Person's Name"
---      external_caller_id_number = "Number send to PSTN on outbound calls"
---      many_handsets = true/false [Indicates that one number rings many phones,
---                      so calls from that number are INCLUDED when hunting so
---                      the other phones have a chance to ring.
--- }
---
--- Any field omitted by the dialplan can use default values provided in:
---
---   default_domian
---   default_external_caller_id_name
---   default_external_caller_id_number
---
--- which can be changed in-line, resulting in less typing and a clearer
--- dialplan.
+Route {
+     id = "15305231044"
+     description = "Direct to Voicemail"
+     route =   "Jim_DirectVM"
+}
 
-default_domain = "10.11.0.3"
+Route {
+     id = "18314650752"
+     description = "Santa Cruz Main Number"
+     route = "15305231043"           # Handle the same as my tahoe number.
+     location = "scruz"
+}
 
-default_external_caller_id_name = "Jim Hayes"
-default_external_caller_id_number = "5305231043"
-default_many_handsets = false
+# Unanswered/busy calls from my cell arrive here
 
--- Hunt groups, called from the dialplan_inbound.lua script.
-
-Extension{ id = "JimTahoe",     dialstring = "wait=30|8001:8002:8003|VM(546)"   }    -- At the lake hunt group
-Extension{ id = "JimScruz",     dialstring = "wait=30|4001|VM(546)"        }    -- In santa cruz hunt group
-Extension{ id = "JimOutside",   dialstring = "wait=30|7001|4001|VM(546)"   }    -- Out and about hunt group
-
-Extension{ id = "JimWakeTahoe", dialstring = "8001:8002:8003:4001"         }    -- At the lake emergency, ring forever.
-Extension{ id = "JimWakeScruz", dialstring = "7001|4001"                   }    -- In santa cruz emergency, ring forever.
-
-Extension{ id = "JimDirectVM",  dialstring = "VM(546)"                     }    -- Direct to voicemail
-
--- Extensions (Tahoe)
-
-Extension{ id = "8000", dialstring = "wait=120|8001:8002:8003:8004:8010"   }    -- Tahoe everything.
-Extension{ id = "8001", dialstring = "wait=120|8001", many_handsets = true }    -- Tahoe DECT phones
-Extension{ id = "8002", dialstring = "wait=120|8002"                       }    -- Tahoe Snom Basement
-Extension{ id = "8003", dialstring = "wait=120|8003"                       }    -- Tahoe Snom ManCave
-Extension{ id = "8004", dialstring = "wait=120|8004"                       }    -- Tahoe Snom Spare (give to Scott)
-Extension{ id = "8005", dialstring = "wait=120|8005"                       }    -- Mac Pro Man Cave
-
-Extension{ id = "8010", dialstring = "wait=120|8010"                       }    -- Tahoe Polycom Speakerphone
-Extension{ id = "8011", dialstring = "wait=120|8011"                       }    -- Grandstream FXS Port
-
-Extension{ id = "8101", dialstring = "cam-deck"                            }    -- Tahoe Deck/Lower Hillside Camera
-Extension{ id = "8102", dialstring = "cam-driveway"                        }    -- Tahoe Driveway Camera
-Extension{ id = "8103", dialstring = "cam-entryway"                        }    -- Tahoe Entryway Camera
-Extension{ id = "8104", dialstring = "cam-hillside"                        }    -- Tahoe Upper Hillside Camera
-
--- Extensions (POTS)
-
-Extension{ id = "8200", dialstring = "8200"                                }     -- Grandstream Analog FXS
-Extension{ id = "8201", dialstring = "8201"                                }     -- Grandstream Analog FXO (IN!)
-
--- Extensions (Mobile)
-
-default_external_caller_id_number = "5305233073"
-
-Extension{ id = "4001", dialstring = "wait=120|4001"                       }    -- iPhone SIP client
-Extension{ id = "4002", dialstring = "wait=120|4002"                       }    -- iPad SIP client
-
--- Extensions (Santa Cruz)
-
-default_external_caller_id_number =  "8314650752"
-
-Extension{ id = "7001", dialstring = "wait=120|7001", many_handsets = true }    -- Santa Cruz DECT phones
-Extension{ id = "7101", dialstring = "7100"                                }    -- Sant Cruz driveway camera
+Route {
+     id = "15305233073"
+     description = "Jim's Cell CFNA/CFBZ"
+     route = "15305231043"           # Handle same as my tahoe number.
+     location = "away"
+}
 
 
--- For Emacs:
--- Local Variables:
--- mode:lua
--- End:
+# INBOUND/PRIVATE EXTENSION ROUTES
+#
+# These can be reached by dialing an internal extension number, from an
+# internal phone, or by PSTN routing based on the DID.
+#
+# Physical extensions should be assigned a numeric number, or be assigned
+# a numeric alias pointing to the alphanumeric SIP id of the extension.
+# 
+# Hunt groups can be assigned an alphanumeric name, which can be called
+# by custom logic inside the dialplan.
+#
+
+Route_Defaults {
+        kind = "inbound/private"
+	domain = "10.11.0.3"
+	many_handsets = "NO"
+	location = "tahoe"
+}
+
+#
+# Location-based extensions:
+
+#
+
+Route { id = "Jim"
+        route = "IF_TIME(2100,0200,Jim_GoneToSleep)"     # 9 pm to 2 am
+	       +"|IF_TIME(0200,0800,Jim_NotAwakeYet)"    # 2 am to 8 am
+	       +"|IF_LOC(546,tahoe,Jim_Tahoe)"           # in tahoe
+	       +"|IF_LOC(546,scruz,Jim_Scruz)"           # in santa cruz
+	       +"|IF_LOC(546,away,Jim_Outside)"          # or outside
+}
+
+Route { id = "546_EMERGENCY"                             # VM constructs and calls this
+       route = "APP(SMS,546)"                            # id if the user presses 9
+              +"|IF_LOC(546,tahoe,Jim_WakeTahoe)"        # before/during message record.
+	      +"|IF_LOC(546,scruz,Jim_WakeScruz)"
+}
+
+#
+# Basic Hunt groups, resulting from DND processing, or as the result of the
+# location based extensions above
+#
+Route { id = "Jim_GoneToSleep" route = "VM(546,2)" }     # BOX 546, greeting 2
+Route { id = "Jim_NotAwakeYet" route = "VM(546,3)" }     # BOX 546, greeting 3
+
+Route { id = "Jim_Tahoe" route = "wait=30|8001:8002:8003|VM(546)" }
+Route { id = "Jim_Scruz" route = "wait=30|4001|VM(546)" }
+Route { id = "Jim_Outside" route = "wait=30|7001|4001|VM(546)" }
+
+Route { id = "Jim_WakeTahoe" route = "8001:8002:8003:4001" }
+Route { id = "Jim_WakeScruz" route = "7001|4001" }
+Route { id = "Jim_DirectVM"  route = "VM(546)" }
+
+#
+# Tahoe
+#
+
+Route { id = "8000" route = "wait=120|8001:8002:8003:8004:8010" }
+Route { id = "8001" route = "wait=120|8001" many_handsets = "YES" } # DECT
+Route { id = "8002" route = "wait=120|8002" }    # SNOM Basement
+Route { id = "8003" route = "wait=120|8003" }    # SNOM Man-Cave
+Route { id = "8004" route = "wait=120|8004" }    # SNOM Spare (Give to Scott)
+Route { id = "8005" route = "wait=120|8005" }    # Mac Pro (X-Lite Test)
+
+Route { id = "8010" route = "wait=120|8010" }    # Polycom SIP
+
+Route { id = "8101" route = "cam-deck" }     # Tahoe Deck/Lower Hillside Camera
+Route { id = "8102" route = "cam-driveway" } # Tahoe Driveway Camera
+Route { id = "8103" route = "cam-entryway" } # Tahoe Entryway Camera
+Route { id = "8104" route = "cam-hillside" } # Tahoe Upper Hillside Camera
+
+Route { id = "8200" route = "8200" }     # Grandstream Analog FXS port
+Route { id = "*9"   route = "8201" }     # Grandstream PSTN FXO port, dialtone)
+
+#
+# Santa Cruz
+#
+
+Route_Defaults {
+       location = "scruz"
+}
+
+Route { id = "7001" route = "wait=120|7001" many_handsets = "YES" }  # DECT
+Route { id = "7101" route = "7100" }   # Santa Cruz driveway camera
+
+# 
+# Mobile
+#
+
+Route_Defaults {
+	location = "away"
+}
+
+Route { id = "4001" route = "wait=120|4001" }   # iPhone SIP client
+Route { id = "4002" route = "wait=120|4002" }   # iPad SIP client
+
+#
+# Special test extensions...
+#
+
+Route { id = "*3246"   route = "APP(echo_test)" }          #   *ECHO
+Route { id = "*32463"  route = "APP(echo_test_delayed" }   #   *ECHOD

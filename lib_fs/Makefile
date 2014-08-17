@@ -4,7 +4,16 @@ LIB_SRC_FILES = fs_ivr.lua \
 		fs_recite.lua \
 		fs_sounds.lua \
 		obj_dialstring.lua \
-		obj_destination.lua
+		obj_destination.lua \
+		obj_extension.lua \
+		obj_extension_ctrl.lua \
+		obj_gateway.lua \
+		obj_gateway_ctrl.lua \
+		obj_location.lua \
+		obj_location_ctrl.lua \
+		obj_number.lua \
+		obj_number_NANPA.lua \
+		obj_source.lua
 
 LIB_NAME = lib_fs
 

@@ -7,15 +7,19 @@ session={}
 
 function session.getVariable(s, var)
     if var == "caller_id_name" then  return "Jim Hayes"
-    elseif var == "caller_id_number" then return "18314650752"
+    elseif var == "caller_id_number" then return "8001"
     elseif var == "uuid" then return "0000-2344-3412-2322"
-    elseif var == "sip_to_user" then return "546"
-    elseif var == "sip_from_user_stripped" then return "1234"
+    elseif var == "sip_to_user" then return "611"
+    elseif var == "sip_from_user_stripped" then return "8001"
     elseif var == "endpoint_disposition" then return "ANSWER"
     end
     
     logError("Requested variable <"..var.."> is not defined.")
     return "NOTDEFINED"
+end
+
+function session.setVariable(s, var, value)
+   logInfo("Setting variable "..var.." to <"..value..">")
 end
 
 function session.execute(s, execString) logInfo("EXECUTE: "..execString); end
@@ -55,7 +59,9 @@ end
 freeswitch = {}
 
 function freeswitch.consoleLog(level, ...)
-    io.write(level, ": ",...)
+   if not UNIT_TESTING then
+      io.write(level, ": ",...)
+   end
 end
 
 function freeswitch.Session(dialString)

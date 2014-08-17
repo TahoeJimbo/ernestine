@@ -16,10 +16,6 @@ kSCRUZ =   "scruz"
 location = {}
 location_data = {};
 
-function Location(table)
-   location_data[table["extension"]] = table
-end
-
 function location.write()                                --[[ LOCATE WRITE --]]
 
     local file, err
