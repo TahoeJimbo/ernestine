@@ -151,19 +151,19 @@ Route {
      id = "15305231043"
      description = "Tahoe Main Number"
 
-     route = "Jim"
+     route = "GOTO(Jim)"
 }   
 
 Route {
      id = "15305231044"
      description = "Direct to Voicemail"
-     route =   "Jim_DirectVM"
+     route =   "GOTO(Jim_DirectVM)"
 }
 
 Route {
      id = "18314650752"
      description = "Santa Cruz Main Number"
-     route = "15305231043"           # Handle the same as my tahoe number.
+     route = "GOTO(15305231043)"           # Handle the same as my tahoe number.
      location = "scruz"
 }
 
@@ -172,7 +172,7 @@ Route {
 Route {
      id = "15305233073"
      description = "Jim's Cell CFNA/CFBZ"
-     route = "15305231043"           # Handle same as my tahoe number.
+     route = "GOTO(15305231043)"           # Handle same as my tahoe number.
      location = "away"
 }
 
@@ -207,14 +207,16 @@ Route { id = "Jim"
 	       +"|IF_LOC(546,tahoe,Jim_Tahoe)"           # in tahoe
 	       +"|IF_LOC(546,scruz,Jim_Scruz)"           # in santa cruz
 	       +"|IF_LOC(546,away,Jim_Outside)"          # or outside
-	       +"|Jim_Tahoe"                             # catch all
+	       +"|GOTO(Jim_Tahoe)"                       # catch-all
 }
 
-Route { id = "546_EMERGENCY"                             # VM constructs and calls this
-       route = "APP(SMS,546)"                            # id if the user presses 9
-              +"|IF_LOC(546,tahoe,Jim_WakeTahoe)"        # before/during message record.
-	      +"|IF_LOC(546,scruz,Jim_WakeScruz)"
+Route { id = "EMERGENCY_546"                             # VM constructs and calls this
+       route = "IF_LOC(546,tahoe,Jim_WakeTahoe)"         # if 9 is pressed before/during
+	      +"|IF_LOC(546,scruz,Jim_WakeScruz)"        # message recording.
+	      +"|GOTO(Jim_WakeTahoe)"
 }
+
+Route { id = "546" route = "GOTO(Jim)" }
 
 #
 # Basic Hunt groups, resulting from DND processing, or as the result of the
