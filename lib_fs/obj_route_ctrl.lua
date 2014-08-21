@@ -48,7 +48,7 @@ function Route_ctrl:new(config_table)
       end
    end
 
-   if DEBUG_EXTENSION then 
+   if DEBUG_ROUTE then 
       table_dump("Route list", object.route_dict)
    end
 
@@ -62,7 +62,7 @@ end
 
 function Route_ctrl:route_from_digits(route_digits)
 
-   if DEBUG_EXTENSION then
+   if DEBUG_ROUTE then
       logInfo("Looking up <"..route_digits..">")
    end
 
@@ -73,7 +73,7 @@ function Route_ctrl:route_from_digits(route_digits)
       return nil
    end
 
-   if DEBUG_EXTENSION then
+   if DEBUG_ROUTE then
       logInfo("Found route <"..route_digits..">, route: <"
 		 ..route:get_route()..">")
    end
@@ -88,7 +88,7 @@ end
 
 function Route_ctrl:location_id_from_digits(route_digits)
 
-   if DEBUG_EXTENSION then
+   if DEBUG_ROUTE then
       logInfo("Looking up location of <"..route_digits..">")
    end
 
@@ -98,7 +98,7 @@ function Route_ctrl:location_id_from_digits(route_digits)
 
    local location_id = extension:get_location()
 
-   if DEBUG_EXTENSION then
+   if DEBUG_ROUTE then
       logInfo("Extension <"..route_digits.."> is in <"..location_id..">")
    end
 
