@@ -205,22 +205,8 @@ function route_call_from_external(source_obj, destination_number)
    local route = gRoutes:route_from_digits(destination_number)
 
    if route then
-      --
-      -- If the dialstring for the first route is a route name
-      -- in its own right, use that instead, this allows a top-level
-      -- rule to branch to a more complicated rule, instead of 
-      -- being duplicated everwhere.
-      --
-      
-      local alt_route = gRoutes:route_from_digits(route:get_route())
-
-      if (alt_route) then
-	 route_call_from_internal(source_obj, alt_route:get_id())
-	 return
-      else
-	 route_call_from_internal(source_obj, destination_number)
-	 return
-      end
+      route_call_from_internal(source_obj, route:get_id())
+      return
    end
 
    logError("No incoming DIDs match: "..destination_number)
