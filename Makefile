@@ -22,6 +22,8 @@ targets:
 	@echo ""
 	@echo "Running unit-tests:"
 	@lua app_unit_tests/unit_tests || exit 1
+	@echo "   Checking dialplan configuration file syntax"
+	@lua app_dialplan/sa-dialplan SYNTAX app_dialplan/dialplan_config.txt || exit 1
 	@echo ""
 
 clean:
