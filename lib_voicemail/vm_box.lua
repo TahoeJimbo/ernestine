@@ -351,11 +351,10 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
       record_file = record_file..".wav"
    end
 
-   if (digit == "9") and (mailbox_obj.Extension == "546") then
-      --
-      -- Find jim. :-)
-      --
-      aLeg:execute("lua", "dialplan inbound JimWake private")
+   if (digit == "9") then
+      aLeg:execute("set", "ringback=%(2000,4000,440.0,480.0)")
+      aLeg:execute("lua",
+		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." private")
       return
    end
 
@@ -369,8 +368,10 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
 
    mailbox_obj = mailbox.reopen(mailbox_obj)
 
-   if (digit == "9") and (mailbox_obj.Extension == "546") then
-      aLeg:execute("lua", "dialplan inbound JimWake private")
+   if digit == "9" then
+      aLeg:execute("set", "ringback=%(2000,4000,440.0,480.0)")
+      aLeg:execute("lua",
+		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." private")
       return
    end
 
