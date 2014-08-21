@@ -183,7 +183,7 @@ for _, module_name in ipairs(test_modules) do
 
    _ut_module_name = module_name
 
-   print("Testing module: "..module_name)
+   print("   Testing module: "..module_name)
 
    -- 
    -- Initialize it
