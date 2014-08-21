@@ -5,7 +5,7 @@ function dispatch_outbound(source_obj, context, destination_digits, forced_cid)
 
    -- The source object has the destination number already configured...
 
-   local dest_number_obj = source_obj.destination_number_obj
+   local dest_number_obj = source_obj:get_dest_number_obj()
 
    local destinations = gGateways:make_routes_for_destination(source_obj,
 							      dest_number_obj)

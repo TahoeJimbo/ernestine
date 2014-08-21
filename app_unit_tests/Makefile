@@ -5,7 +5,7 @@ APP_SOURCE_FILES = unit_test_obj_dialstring.lua \
 		   unit_test_recite.lua \
 		   unit_test_obj_number.lua \
 		   unit_test_obj_location.lua \
-		   unit_test_obj_extension.lua
+		   unit_test_obj_route.lua
 
 
 APP_LIBS = ../compatibility_shim.lua \

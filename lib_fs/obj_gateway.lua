@@ -1,5 +1,15 @@
 
+--[[
+
+   A gateway encapsulates information about off-switch services that can process
+   a call. Most often, this is a provider connected to the PSTN, but it can
+   be another switch as well.
+
+]]--
+
 Gateway = {}
+
+-- PARSER KEYWORD DEFINITIONS
 
 g_gateway_defaults_keywords = {
          "domestic_numbering_plan",
@@ -26,7 +36,14 @@ g_gateway_parser_keywords = {
          "location"
 }
 
-
+--
+-- Configure a gateway as described in the parser-generated
+-- configuration_table.
+--
+-- We use the parent controller's notion of the current defaults, and use them
+-- when keywords are missing in the configuration file.
+--
+                                                                    --[[ GATEWAY:NEW ]]--
 function Gateway:new(config_pairs, controller)
 
    if config_pairs == nil then
@@ -55,6 +72,13 @@ function Gateway:new(config_pairs, controller)
 
    return object
 end
+
+--
+-- Give a number object and location, create an outbound dialstring that
+-- FreeSWITCH should use to complete the call.  The source_location_obj
+-- determines which caller ID values to send to the gateway.
+--
+                                           -- [[ GATEWAY:MAKE_DESTINATION_FOR_NUMBER ]]--
 
 function Gateway:make_destination_for_number(destination_number_obj, source_location_obj)
 
@@ -90,12 +114,19 @@ function Gateway:make_destination_for_number(destination_number_obj, source_loca
       return nil
    end
 
+   -- And add the formatted number to it, including any prefix 
+   -- required by the provider.
+
    local formatted_number = destination_number_obj:format(output_format)
 
    if not formatted_number then
       logError("Gateway <"..self.name.."> could not format number for "
 		  ..kind.." type call.")
       return nil
+   end
+
+   if self.outbound_prefix then
+      base_ds = base_ds..self.outbound_prefix
    end
 
    base_ds = base_ds..formatted_number

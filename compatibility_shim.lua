@@ -45,6 +45,17 @@ function session.hangupCause(s)
    return "SUCCESS";
 end
 
+function session.setAutoHangup(s, bool)
+   local bool_string
+
+   if bool == true then bool_string = "true"; end
+   if bool == false then bool_string = "false"; end
+
+   if bool_string == nil then bool_string = "???"; end
+
+   logInfo("AUTO HANGUP: "..bool_string)
+end
+
 event = {}
 
 function event.addHeader(dummy,header, data)

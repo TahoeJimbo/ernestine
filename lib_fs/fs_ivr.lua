@@ -41,42 +41,46 @@ ivr = {}
 --
 -- ivr.play - Plays audio path.
 --
-
-function ivr.play(sess, audioFile)
-   if (sess:ready() == false) then
+                                                                       --[[ IVR.PLAY ]]--
+function ivr.play(session, audioFile)
+   if session:ready() == false then
       logError("ivr.play: Session not ready. NOT Playing "..audioFile);
       return;
    else
     logInfo("ivr.play: Playing "..audioFile);
    end
 
-   sess:streamFile(audioFile);
+   session:streamFile(audioFile);
 end
 
+-- ivr.prompt(session, audiopath, timeout_seconds)
 --
--- ivr.prompt - Plays audio path and collects a digit or times out.
--- 
--- returns digit, ["valid" | "timed-out"]
+--    Plays the audiopath, and collects a digit, or timeout_seconds
+--    passes.
 --
-
-function ivr.prompt(sess, audioFile, timeout)
+--    Returns digit, status
+--       digit  = "" if nothing entered,
+--       status = "timed-out" or "valid"
+--
+                                                                     --[[ IVR.PROMPT ]]--
+function ivr.prompt(session, audioFile, timeout)
 
    local digits;
    
-   if (timeout == nil) then
+   if timeout == nil then
       timeout = 4000;
    end
 
-   if (sess:ready() == false) then
+   if session:ready() == false then
       logError("ivr.prompt: Session not ready. NOT Playing "..audioFile);
       return "", "timed-out";
    else
       logInfo("ivr.prompt: Playing "..audioFile);
    end
 
-   sess:flushDigits();
+   session:flushDigits();
    
-   digits = sess:playAndGetDigits(1, -- min digits
+   digits = session:playAndGetDigits(1, -- min digits
        1, -- max digits
        1, -- max attempts
        timeout, -- digit timeout
@@ -88,7 +92,7 @@ function ivr.prompt(sess, audioFile, timeout)
 
    --[[ Valid digits?  If any? --]]
 
-   if (#digits == 0) then
+   if #digits == 0 then
       logInfo("ivr.prompt: Timed out.")
       return "", "timed-out";
    end
@@ -98,23 +102,26 @@ function ivr.prompt(sess, audioFile, timeout)
     return digits, "valid";
 end
 
+--    Plays the audiopath and collects multiple digits, or
+--    timeout_seconds passes.  Entering a "#" terminates
+--    collection.
 --
--- ivr.prompt_multi_digit - Plays audio path and collects digits (terminated
---                          by #) or times out.
--- 
--- returns digit, ["valid" | "timed-out"]
+--    Returns digits, status
+--       digits = "" if nothing entered,
+--       status = "timed-out" or "valid"
 --
+                                                         --[[ IVR.PROMPT_MULTI_DIGIT ]]--
 
-function ivr.prompt_multi_digit(sess, audioFile, terminator)
+function ivr.prompt_multi_digit(session, audioFile, terminator)
 
    local digits;
 
-   if (sess == nil) then
+   if session == nil then
       logError("Session is nil?");
       return "", "timed-out";
    end
 
-   if (sess:ready() == false) then
+   if session:ready() == false then
       logError("ivr.prompt_multi_digit: Session not ready. NOT Playing "
 	       ..audioFile);
 
@@ -123,9 +130,9 @@ function ivr.prompt_multi_digit(sess, audioFile, terminator)
       logInfo("ivr.prompt_multi_digit: Playing "..audioFile);
    end
 
-   sess:flushDigits();
+   session:flushDigits();
 
-   digits = sess:playAndGetDigits(1, -- min digits
+   digits = session:playAndGetDigits(1, -- min digits
        50, -- max digits
        1, -- max attempts
        4000, -- digit timeout
@@ -137,7 +144,7 @@ function ivr.prompt_multi_digit(sess, audioFile, terminator)
 
     --[[ Valid digits?  If any? --]]
 
-    if (#digits == 0) then
+    if #digits == 0 then
        logInfo("ivr.prompt_multi_digit: Timed out.")
        return "", "timed-out";
     end
@@ -147,33 +154,36 @@ function ivr.prompt_multi_digit(sess, audioFile, terminator)
     return digits, "valid";
 end
 
+-- ivr.prompt_list(session, path_list, timeout_seconds)
 --
--- ivr.prompt_list - Plays a list of files, and returns when a digit is
---                   pressed, or tiems out.
+--    Plays an array of audiopaths and returns when a digit
+--    is pressed, or timeout_seconds passes.
 --
--- returns digits, ["valid" | "timed-out"]
+--    Returns digit, status
+--       digit  = "" if nothing entered,
+--       status = "timed-out" or "valid"
 --
-
-function ivr.prompt_list(sess, menu_list, timeout)
+                                                                --[[ IVR.PROMPT_LIST ]]--
+function ivr.prompt_list(session, menu_list, timeout)
    
    local digits;
    local actual_timeout = 100;
 
-   sess:flushDigits();
+   session:flushDigits();
    
    for index, file in ipairs(menu_list) do
-      if (sess:ready() == false) then
+      if session:ready() == false then
 	 logError("ivr.prompt_list: Session not ready. NOT Playing "..file);
 	 return "", "timed-out";
       end
 
-      if (index == #menu_list) then 
+      if index == #menu_list then 
 	 actual_timeout = timeout
       end
       
       logInfo("ivr.prompt_list: Playing index "..index..":"..file);
 
-      digits = sess:playAndGetDigits(1, -- min digits
+      digits = session:playAndGetDigits(1, -- min digits
 	    1, -- max digits
 	    1, -- max attempts
 	    actual_timeout, -- digit timeout
@@ -183,7 +193,7 @@ function ivr.prompt_list(sess, menu_list, timeout)
 	    ".*" -- digit regular expression to validate digits
       );
 
-      if (digits ~= "") then
+      if digits ~= "" then
 	 return digits, "valid"
       end
    end

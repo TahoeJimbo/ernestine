@@ -15,6 +15,7 @@
 
 -- RETURNS: (kind, canonicalized number) or (nil, nil)
 
+                                                             --[[ NUMBER:PARSE_NANPA ]]--
 function Number:parse_NANPA()
 
    local result
@@ -24,25 +25,25 @@ function Number:parse_NANPA()
 
    result = self:PRIV_NANPA_parse_emergency()
    
-   if (result) then
+   if result then
       return "emergency", result
    end
 
    result = self:PRIV_NANPA_parse_intl()
 
-   if (result) then
+   if result then
       return "intl", result
    end
 
    result = self:PRIV_NANPA_parse_domestic()
 
-   if (result) then
+   if result then
 
       -- Make sure it's not a fully qualified local number...
 
       local possible_local_number = self:PRIV_NANPA_parse_local(result)
 
-      if (possible_local_number) then 
+      if possible_local_number then 
 	 return "local", possible_local_number
       end
 
@@ -51,13 +52,13 @@ function Number:parse_NANPA()
 
    result = self:PRIV_NANPA_parse_local()
 
-   if (result) then
+   if result then
       return "local", result
    end
 
    result = self:PRIV_NANPA_parse_service()
 
-   if (result) then
+   if result then
       return "service", result
    end
 
@@ -69,10 +70,10 @@ end
 -- %c      Canonical parsed number, (countrycode + number)
 -- %l      Local part (minus country and city code)
 -- %a      Area/city code
-
+                                                            --[[ NUMBER:FORMAT_NANPA ]]--
 function Number:format_NANPA(fs)
 
-   if (fs == nil or #fs < 2) then
+   if fs == nil or #fs < 2 then
       logError("Improper format string.")
       return nil
    end
@@ -83,7 +84,7 @@ function Number:format_NANPA(fs)
    local output = ""
 
    if self.kind == "local" or self.kind == "domestic" then
-      if (#self.canonical_number == 7) then
+      if #self.canonical_number == 7 then
 	 area_code = self.local_code
 	 local_part = self.canonical_number
       else
@@ -113,6 +114,7 @@ function Number:format_NANPA(fs)
 
    return output
 end
+                                              --[[ NUMBER:PRIV_NANPA_PROCESS_PERCENT ]]--
 
 function Number:PRIV_NANPA_process_percent(fs, fpos, flength)
    fpos = fpos + 1
@@ -160,7 +162,7 @@ function Number:PRIV_NANPA_process_percent(fs, fpos, flength)
       return nil
    end
 end
-
+                                                   --[[ NUMBER:PRIV_NANPA_PARSE_INTL ]]--
 function Number:PRIV_NANPA_parse_intl()
 
    local international_number = nil
@@ -178,7 +180,7 @@ function Number:PRIV_NANPA_parse_intl()
 
    international_number = string.match(self.raw_number, "^%+(%d+)")
 
-   if (international_number) then
+   if international_number then
       if DEBUG_NUMBER then
 	 logInfo("Returning international number <"..international_number..">")
       end
@@ -187,7 +189,7 @@ function Number:PRIV_NANPA_parse_intl()
 
    international_number = string.match(self.raw_number, "^011(%d+)")
 
-   if (international_number) then
+   if international_number then
       if DEBUG_NUMBER then 
 	 logInfo("Returning international number <"..international_number..">")
       end
@@ -203,14 +205,14 @@ end
 -- The number should be "good enough" and we'll let the remote end sort out
 -- possible issues.
 --
-
+                                               --[[ NUMBER:PRIV_NANPA_PARSE_DOMESTIC ]]--
 function Number:PRIV_NANPA_parse_domestic()
 
    local domestic_number
 
    domestic_number = string.match(self.raw_number, "^(1[2-9]%d%d[2-9]%d%d%d%d%d%d)$")
 
-   if (domestic_number) then
+   if domestic_number then
       if DEBUG_NUMBER then
 	 logInfo("Returning domestic number <"..domestic_number..">")
       end
@@ -219,7 +221,7 @@ function Number:PRIV_NANPA_parse_domestic()
 
    domestic_number = string.match(self.raw_number, "^%+(1[2-9]%d%d[2-9]%d%d%d%d%d%d)$")
 
-   if (domestic_number) then
+   if domestic_number then
       if DEBUG_NUMBER then 
 	 logInfo("Returning domestic number <"..domestic_number..">")
       end
@@ -228,7 +230,7 @@ function Number:PRIV_NANPA_parse_domestic()
 
    domestic_number = string.match(self.raw_number, "^011(1[2-9]%d%d[2-9]%d%d%d%d%d%d)$")
 
-   if (domestic_number) then
+   if domestic_number then
       if DEBUG_NUMBER then
 	 logInfo("Returning domestic number <"..domestic_number..">")
       end
@@ -237,19 +239,20 @@ function Number:PRIV_NANPA_parse_domestic()
 
    return nil
 end
+                                                  --[[ NUMBER:PRIV_NANPA_PARSE_LOCAL ]]--
 
 function Number:PRIV_NANPA_parse_local(domestic_number)
 
    local area_code = nil
    local local_number = nil
 
-   if (domestic_number) then
+   if domestic_number then
       --
       -- Break down the number into the area and local parts
       --
       area_code, local_number = string.match(domestic_number, "^1([2-9]%d%d)([2-9]%d%d%d%d%d%d)$")
 
-      if (area_code == self.local_code) then
+      if area_code == self.local_code then
 	 if DEBUG_NUMBER then
 	    logInfo("Returning local number <"..domestic_number..">")
 	 end
@@ -261,7 +264,7 @@ function Number:PRIV_NANPA_parse_local(domestic_number)
 
    local_number = string.match(self.raw_number, "^([2-9]%d%d%d%d%d%d)$")
 
-   if (local_number) then
+   if local_number then
       local_number = "1"..self.local_code..local_number
       if DEBUG_NUMBER then
 	 logInfo("Returning local number <"..local_number..">")
@@ -271,14 +274,14 @@ function Number:PRIV_NANPA_parse_local(domestic_number)
       
    return nil
 end
-
+                                                --[[ NUMBER:PRIV_NANPA_PARSE_SERVICE ]]--
 function Number:PRIV_NANPA_parse_service()
 
    local service_number = nil
 
    service_number = string.match(self.raw_number, "^[2-8]11$")
 
-   if (service_number) then
+   if service_number then
       if DEBUG_NUMBER then 
 	 logInfo("Returning service number <"..service_number..">")
       end
@@ -287,12 +290,12 @@ function Number:PRIV_NANPA_parse_service()
 
    return nil
 end
-
+                                              --[[ NUMBER:PRIV_NANPA_PARSE_EMERGENCY ]]--
 function Number:PRIV_NANPA_parse_emergency()
 
    local emergency_number = nil
    
-   if (self.raw_number == "911") then
+   if self.raw_number == "911" then
       if DEBUG_NUMBER then
 	 logInfo("Returning emergency number <911>")
       end

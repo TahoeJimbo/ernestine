@@ -2,6 +2,14 @@
 
 Gateway_ctrl = {}
 
+--
+-- Configure a list of gateways as described in the parser-generated
+-- configuration_table.
+--
+-- We extract the Gateway_Defaults and Gateway blocks and use them to create
+-- Gateway objects.
+--
+                                                               --[[ GATEWAY_CTRL:NEW ]]--
 function Gateway_ctrl:new(config_table)
 
    if config_table == nil then
@@ -33,11 +41,11 @@ function Gateway_ctrl:new(config_table)
 	 end
       elseif group.group_name == "Gateway" then
 
-	 local newGateway = Gateway:new(group.items, object)
+	 local new_gateway = Gateway:new(group.items, object)
 	 
-	 if newGateway == nil then return nil; end
+	 if new_gateway == nil then return nil; end
 
-	 object.gateway_list[#object.gateway_list + 1] = newGateway
+	 object.gateway_list[#object.gateway_list + 1] = new_gateway
       end
    end
 
@@ -61,8 +69,14 @@ end
 --       2) anonymous gateways (no location) second
 --       3) other gateways (config file order)
 --
+                                       --[[ GATEWAY_CTRL:MAKE_ROUTES_FOR_DESTINATION ]]--
 
 function Gateway_ctrl:make_routes_for_destination(source_obj, destination_number_obj)
+
+   if source_obj == nil or destination_number_obj == nil then
+      logError("Invalid arguments")
+      return nil
+   end
 
    local gateways = self:PRIV_get_capable_gateways(destination_number_obj,
 						   source_obj.source_location_obj)
@@ -86,6 +100,17 @@ function Gateway_ctrl:make_routes_for_destination(source_obj, destination_number
    return destinations
 end
 
+----------PRIVATE------------------------------------------------------------------------
+
+--
+-- Return an array of Gateway object that are allowed to handle the kind of number
+-- represented by number_obj.
+--
+-- The source_location_obj allows the gateway picker to sort the results
+-- placing gateways for the source's location first, then those with no locations
+-- second, and finally gateways with a location different from the source.
+--
+                                         --[[ GATEWAY_CTRL:PRIV_GET_CAPABLE_GATEWAYS ]]--
 
 function Gateway_ctrl:PRIV_get_capable_gateways(number_obj, source_location_obj)
 

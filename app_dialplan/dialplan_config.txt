@@ -207,6 +207,7 @@ Route { id = "Jim"
 	       +"|IF_LOC(546,tahoe,Jim_Tahoe)"           # in tahoe
 	       +"|IF_LOC(546,scruz,Jim_Scruz)"           # in santa cruz
 	       +"|IF_LOC(546,away,Jim_Outside)"          # or outside
+	       +"|Jim_Tahoe"                             # catch all
 }
 
 Route { id = "546_EMERGENCY"                             # VM constructs and calls this

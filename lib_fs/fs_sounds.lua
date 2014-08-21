@@ -14,31 +14,38 @@ sit_tones["other"]               = "LLSHLL"
 sit_tones["intercept"]           = "SLSLLL"
 sit_tones["reserved"]            = "SHSHLL"
 
-sit_messages1["reorder-local"]          = ANNOUNCEMENTS.."cannot-complete-as-dialed.wav"
-sit_messages2["reorder-local"]          = ANNOUNCEMENTS.."hangup-try-again.wav"
+sit_messages1["reorder-local"]      = ANNOUNCEMENTS.."cannot-complete-as-dialed.wav"
+sit_messages2["reorder-local"]      = ANNOUNCEMENTS.."hangup-try-again.wav"
 
-sit_messages1["reorder-distant"]        = ANNOUNCEMENTS.."cannot-complete-otherend-error.wav"
-sit_messages2["reorder-distant"]        = ANNOUNCEMENTS.."hangup-try-again.wav"
+sit_messages1["reorder-distant"]    = ANNOUNCEMENTS.."cannot-complete-otherend-error.wav"
+sit_messages2["reorder-distant"]    = ANNOUNCEMENTS.."hangup-try-again.wav"
 
-sit_messages1["no-circuits-local"]      = ANNOUNCEMENTS.."cannot-complete-all-circuits-busy-now.wav"
-sit_messages2["no-circuits-local"]      = ANNOUNCEMENTS.."hangup-try-again.wav"
+sit_messages1["no-circuits-local"]  = ANNOUNCEMENTS.."cannot-complete-all-circuits-busy-now.wav"
+sit_messages2["no-circuits-local"]  = ANNOUNCEMENTS.."hangup-try-again.wav"
 
-sit_messages1["no-circuits-distant"]    = ANNOUNCEMENTS.."cannot-complete-all-circuits-busy-now.wav"
-sit_messages2["no-circuits-distant"]    = ANNOUNCEMENTS.."hangup-try-again.wav"
+sit_messages1["no-circuits-distant"]= ANNOUNCEMENTS.."cannot-complete-all-circuits-busy-now.wav"
+sit_messages2["no-circuits-distant"]= ANNOUNCEMENTS.."hangup-try-again.wav"
 
-sit_messages1["vacant"]                 = ANNOUNCEMENTS.."that-is-not-rec-phn-num.wav"
-sit_messages2["vacant"]                 = ANNOUNCEMENTS.."check-number-dial-again.wav"
+sit_messages1["vacant"]             = ANNOUNCEMENTS.."that-is-not-rec-phn-num.wav"
+sit_messages2["vacant"]             = ANNOUNCEMENTS.."check-number-dial-again.wav"
 
-sit_messages1["other"]                  = ANNOUNCEMENTS.."an-error-has-occured.wav"
-sit_messages2["other"]                  = ANNOUNCEMENTS.."hangup-try-again.wav"
+sit_messages1["other"]              = ANNOUNCEMENTS.."an-error-has-occured.wav"
+sit_messages2["other"]              = ANNOUNCEMENTS.."hangup-try-again.wav"
 
-sit_messages1["intercept"]              = ANNOUNCEMENTS.."cannot-complete-as-dialed.wav"
-sit_messages2["intercept"]              = ANNOUNCEMENTS.."check-number-dial-again.wav"
+sit_messages1["intercept"]          = ANNOUNCEMENTS.."cannot-complete-as-dialed.wav"
+sit_messages2["intercept"]          = ANNOUNCEMENTS.."check-number-dial-again.wav"
 
-sit_messages1["reserved"]               = ANNOUNCEMENTS.."we-apologize.wav"
-sit_messages2["reserved"]               = ANNOUNCEMENTS.."weasels-have-eaten.wav"
+sit_messages1["reserved"]            = ANNOUNCEMENTS.."we-apologize.wav"
+sit_messages2["reserved"]           = ANNOUNCEMENTS.."weasels-have-eaten.wav"
 
-
+--
+-- Plays a SIT tone for the specified number of times, or 3 of not repeat count
+-- is provided.
+--
+-- kind = [reorder-local, reorder-distant, no-circuits-local, no-circuits-distant
+--         vacant, other, intercept, reserved]
+--
+                                                                     --[[ SOUNDS.SIT ]]--
 function sounds.sit(session, kind, repeats)
 
    local tone = sit_tones[kind]
@@ -51,8 +58,6 @@ function sounds.sit(session, kind, repeats)
       message2 = ANNOUNCEMENTS.."hangup-try-again.wav"
       logError("Invalid sit-tone <"..kind.."> requested.")
    end
-
-   
 
    repeats = repeats or 3
 
@@ -114,7 +119,10 @@ function sounds.sit(session, kind, repeats)
 
 end
 
-
+                                                          --[[ SOUNDS.VOICEMAIL_BEEP ]]--
 function sounds.voicemail_beep(session)
-   session:execute("playback", "tone_stream://v=-7;%(100,0,440);v=-7;>=2;+=.1;%(400,0,440)");
+
+   session:execute("playback",
+		   "tone_stream://v=-7;%(100,0,440);v=-7;>=2;+=.1;%(400,0,440)");
+
 end

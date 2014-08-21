@@ -3,7 +3,7 @@
 
 Number = {}
 
-gNumberKinds = { "intl", "domestic", "local", "special", "emergency" }
+g_number_kinds = { "intl", "domestic", "local", "special", "emergency" }
 
 --[[
 
@@ -18,11 +18,11 @@ PROPERTIES:
                    or "emergency"
 
    canonical_number = The dialed number, stripped of all prefix indicators (+, 0,
-                      011, etc.) consisting of the country code + number, or the 
+                      011, etc.) consisting of the country code and number, or the 
                       special service/emergency number digits.
-]]--
+--]]
 
-
+                                                                     --[[ NUMBER:NEW ]]--
 function Number:new(numbering_plan, local_code, number)
 
    if numbering_plan == nil or local_code == nil or number == nil
@@ -43,7 +43,7 @@ function Number:new(numbering_plan, local_code, number)
    object.kind = nil
    object.canonical_number = nil
 
-   object:parse()
+   object:PRIV_parse()
 
    if object.kind == nil then
       return nil
@@ -52,7 +52,34 @@ function Number:new(numbering_plan, local_code, number)
    return object
 end
 
-function Number:parse()
+                                                                  --[[ NUMBER:FORMAT ]]--
+function Number:format(format_string)
+
+   if self.plan == "NANPA" then
+      return self:format_NANPA(format_string)
+   end
+
+   -- We should never get here.  The object can't be created
+   -- if the numbering plan is invalid.
+
+   error("Internal Error")
+end
+
+                                                             --[[ NUMBER:DESCRIPTION ]]--
+function Number:description()
+   
+   local d_plan = self.plan or "[?]"
+   local d_raw_number = self.raw_number or "[?]"
+   local d_kind = self.kind or "[?]"
+
+   return d_plan.." "..d_raw_number.." ("..d_kind..")"
+end
+
+
+----------PRIVATE------------------------------------------------------------------------
+
+                                                              --[[ NUMBER:PRIV_PARSE ]]--
+function Number:PRIV_parse()
 
    if self.plan == "NANPA" then
       self.kind, self.canonical_number = self:parse_NANPA()
@@ -67,23 +94,3 @@ function Number:parse()
    end
 end
 
-function Number:format(format_string)
-
-   if self.plan == "NANPA" then
-      return self:format_NANPA(format_string)
-   end
-
-   -- We should never get here.  The object can't be created
-   -- if the numbering plan is invalid.
-
-   error("Internal Error")
-end
-
-function Number:description()
-   
-   local d_plan = self.plan or "[?]"
-   local d_raw_number = self.raw_number or "[?]"
-   local d_kind = self.kind or "[?]"
-
-   return d_plan.." "..d_raw_number.." ("..d_kind..")"
-end

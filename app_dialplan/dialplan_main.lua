@@ -77,31 +77,6 @@ local dialplan_parser_config = {
    { group_name = "Route_Defaults",     keywords = g_route_defaults_keywords   },
 }
 
-function process_dialplan_inbound(extension, context)
-
-   logError("Starting dialplan: Extension "..extension
-	    ..", Context: "..context);
-   dialplan_entrypoint_inbound(session, context, extension);
-   logError("Finishing dialplan: Extension "..extension
-	    ..", Context: "..context);
-end
-
-function process_dialplan_outbound()
-   if (#arg ~= 3) then
-      logError("Wrong number of arguments.");
-      return;
-   end
-
-   local extension = arg[2];
-   local context = arg[3];
-
-   logError("Starting dialplan: Extension "..extension
-	    ..", Context: "..context);
-   dialplan_entrypoint_outbound(session, context, extension);
-   logError("Finishing dialplan: Extension "..extension
-	    ..", Context: "..context);
-end
-
 ----------------------------------------------------------------
 -- MAIN
 ----------------------------------------------------------------
@@ -143,6 +118,8 @@ if gLocations == nil or gGateways == nil or gRoutes == nil then
    return
 end
 
+gLocations:load()
+
 if (session) then
    source_obj = Source:new(session)
 end
@@ -158,7 +135,14 @@ if (arg[1] == "inbound") then
    logError("STARTING INBOUND DIALPLAN: dest=<"..destination_digits..">, "
 	       .."context=<"..context..">");
 
-   dispatch_inbound(source_obj, context, destination_digits, nil)
+   if (context == "private") then
+      route_call_from_internal(source_obj, destination_digits);
+   elseif (context == "public") then
+      route_call_from_external(source_obj, destination_digits);
+   else
+      logError("Invalid context <"..context..">")
+      sounds.sit(fs_session, "reorder-local");
+   end
 
    logError("ENDING INBOUND DIALPLAN: dest=<"..destination_digits..">, "
 	       .."context=<"..context..">");

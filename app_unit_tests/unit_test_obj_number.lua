@@ -6,7 +6,8 @@ function _ut_Number.init()
 end
 
 
-function _ut_Number.parse_test(plan, local_code, number, expecting_canonical, expecting_kind)
+function _ut_Number.parse_test(plan, local_code, number,
+			       expecting_canonical, expecting_kind)
    
    local theNumber = Number:new(plan, local_code, number)
 
@@ -52,6 +53,8 @@ function _ut_Number.format_test(plan, local_code, number,
       print("Expecting <"..expected_result.."> but got <"
 	    ..result.."> instead.")
    end
+
+   PASS()
 end
 
 ------------------------------------------------------------------ BASIC CREATE TESTS --

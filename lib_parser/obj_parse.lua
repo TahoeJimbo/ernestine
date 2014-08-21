@@ -132,17 +132,20 @@ function Parser:load_file(file_name)
 
 	       if error_message then
 		  self:error_message(error_message)
+		  file:close()
 		  return error_message
 	       end
 	    end
 	 else 
 	    if line ~= nil then
 	       self:error_message(line)
+	       file:close()
 	       return line
 	    end
 	 end
       until token == nil
    end
+   file:close()
 end
 
 function Parser:error_message(message)

@@ -4,21 +4,6 @@
 --[[ UTILITIES --]]
 
 
-
-
-function dispatch_inbound(source_obj, context, destination_digits)
-
-   if (context == "private") then
-      dispatch_from_internal(fs_session, dest);
-   elseif (context == "public") then
-      dispatch_from_external(fs_session, dest);
-   else
-      logError("Invalid context <"..context..">")
-      sounds.sit(fs_session, "reorder-local");
-   end
-end
-
-
 --
 -- Returns 1 for the user's standard greeting
 -- Returns 2-4 for Jim's custom greeting...
@@ -88,153 +73,158 @@ end
 -- Calls from internal extensions to internal extensions are handled here...
 -----------------------------------------------------------------------------------------
 
-function dispatch_from_internal(source_obj, destination_digits)
+function route_call_from_internal(source_obj, destination_digits)
 
-   
+   --
+   -- Quick sanity check
+   --
+   if source_obj == nil or destination_digits == nil then
+      logError("Invalid arguments")
 
-   local source_extension_digits = aLeg:getVariable("sip_from_user_stripped");
-   local excluded_extension
-   local extension = nil
+      -- Use the global "session" since our source session appears invalid.
 
-   if DEBUG then logInfo("Connecting to <"..destination_digits
-			 .."> from <"..source_extension_digits..">"); end
-
-   local source_extension = extensions[source_extension_digits]
-
-   if source_extension and source_extension.many_handsets == true then
-      excluded_extension = ""
-   else
-      excluded_extension = source_extension_digits
-   end
-
-   -- Pseudo extensions with custom logic  (location, or special hunting)
-   -- They'll return an extension object we should use, or nil if not.
-
-   if (destination_digits == "546") then
-      extension = extension_546()
-   end
-
-   if (destination_digits == "JimWake") then
-      extension = extension_JimWake()
-
-      if extension then
-	 ivr.play(aLeg, SOUNDS.."Custom/ill-try-to-wake-him.wav");
-      end
-   end
-
-   if extension == nil then 
-      --
-      -- Custom functions didn't recommend anything...  So use the dialed digits.
-      --
-      extension = extensions[destination_digits]
-   end
-
-   if (extension == nil) then
-      logError("Could not locate extension <"..destination_digits.."> in dialplan_config.txt file")
-      sounds.sit(aLeg, "intercept")
+      sounds.sit(session, "reserved")
       return
    end
 
-   aLeg:execute("ring_ready");
+   if DEBUG then logInfo("Connecting <"..source_obj.source_digits.."> to <"
+			    ..destination_digits..">")
+   end
+
+   --
+   -- Get some info about the source route...
+   --
+
+   if source_obj:get_source_route_obj():get_many_handsets() == true then
+      excluded_extension = ""
+   else
+      excluded_extension = source_obj:get_source_digits()
+   end
+
+   --
+   -- Fetch the destination route
+   --
+
+   local destination_route = gRoutes:route_from_digits(destination_digits)
+   local source_session = source_obj:get_fs_session()
+
+   if destination_route == nil then
+      logError("No route found to <"..destination_digits..">")
+      sounds.sit(source_session, "vacant")
+      return
+   end
+
+   source_session:execute("ring_ready");
 
    local destination = Destination:new()
-   destination:set_custom_dialstring(extension.dialstring)
+   destination:set_custom_dialstring(destination_route:get_route())
    destination:set_excluded_extension(excluded_extension)
-   destination:set_source_caller_id(aLeg:getVariable("sip_from_display"),
-				    source_extension_digits)
 
-   destination:set_default_domain(extension.domain)
+   local source_cname, source_cid = source_obj:get_caller_id_info()
+   destination:set_source_caller_id(source_cname, source_cid)
 
-   local result, message = destination:connect(aLeg)
+   destination:set_default_domain(destination_route:get_domain())
+
+   local result, message = destination:connect(source_session)
 
    if result == "COMPLETED" then
       return
 
    elseif result == "TRY VOICEMAIL" then
-      local extension = message
+      local args = string_split(message, ",")
+      local extension = args[1]
+      local greeting
+
+      if args[2] then 
+	 greeting = args[2]
+      else
+	 greeting = "1"
+      end
 
       logInfo("Voicemail extension: "..extension);
-      greeting = selectVoicemailGreeting(extension);
       logInfo("Voicemail greeting "..greeting);
       
-      aLeg:setVariable("X-vm_extension", extension);
-      aLeg:setVariable("X-vm_greeting", greeting);
+      source_session:setVariable("X-vm_extension", extension);
+      source_session:setVariable("X-vm_greeting", greeting);
 
-      aLeg:setAutoHangup(false)
+      source_session:setAutoHangup(false)
 
-      aLeg:execute("lua", "voicemail record "..extension.." "..greeting)
+      source_session:execute("lua", "voicemail record "..extension.." "..greeting)
+      return
+   elseif result == "REDIRECT" then
+      local extension = message
+      
+      route_call_from_internal(source_obj, extension)
       return
    else
-      logError("Failed to connect "..source_extension_digits.." to "..extension.dialstring..": "..message)
+      logError("Failed to connect <"..source_obj.source_digits
+		  .."> to <"..destination_digits..">: "..message)
    end
 
-   sounds.sit(aLeg, "reorder-local")
+   sounds.sit(source_session, "reorder-local")
 end
 
-function dispatch_external(aLeg, dest)
+function route_call_from_external(source_obj, destination_number)
 
-   if DEBUG then logInfo("Dispatching "..dest.." to external dialplan processor."); end
-   aLeg:execute("info")
-
-   local caller_id_name = aLeg:getVariable("sip_from_display");
-   
-   if (caller_id_name == nil) then
-      caller_id_name = aLeg:getVariable("sip_from_user_stripped");
-      if caller_id_name ~= nil then aLeg:setVariable("sip_from_display", caller_id_name); end
+   if source_obj == nil or destination_number == nil then
+      logError("Invalid arguments.")
+      sounds.sit(session, "reorder-distant")
+      return 
    end
 
-   if (caller_id_name == nil) then
-      caller_id_name = "[No ID Provided]"
-      aLeg:setVariable("sip_from_display", caller_id_name);
+   if DEBUG then
+      logInfo("Routing "..destination_number.." to external dialplan processor.")
    end
-
-   local caller_id_number = aLeg:getVariable("sip_from_user_stripped");
 
    -- Sanity check
 
-   if dest:sub(1,2) == "+1" or dest:sub(1,1) == "1" then
+   if destination_number:sub(1,2) == "+1" or destination_number:sub(1,1) == "1" then
       --
       -- Success!
       --
    else
-      logError("Invalid destination number: "..dest)
-      sounds.sit(aLeg, "intercept")
+      logError("Invalid destination number: "..destination_number)
+      sounds.sit(source_obj:get_fs_session(), "intercept")
       return
    end
 
-   if (dest:sub(1,1) == "+") then
-      dest = dest:sub(2, #dest)
+   if (destination_number:sub(1,1) == "+") then
+      destination_number = destination_number:sub(2, #destination_number)
    end
 
-   logError("Processing call from <"..caller_id_name..">/<"..caller_id_number.."> to <"..dest..">")
+   local source_cname, source_cid = source_obj:get_caller_id_info()
 
-   -- TAHOE
+   logError("Processing call from <"..source_cname..">/<"..source_cid..
+	       "> to <"..destination_number..">")
 
-   if dest == "15305231043" or "15305233073" then 
-      dispatch_internal(aLeg, "546")
-      return
-   elseif dest == "15305259155" then
-      aLeg:setVariable("sip_from_display", "55:"..caller_id_name)
-      dispatch_internal(aLeg, "546")
-      return
-   elseif (dest == "15305231044") then
-      dispatch_internal(aLeg, "JimDirectVM")
-      return
-   -- SCRUZ
+   --
+   -- Do more sanity checking...  The number must have a valid
+   -- route in the routing database
+   --
 
-   elseif (dest == "18314650752") then
-     dispatch_internal(aLeg, "546");
-     return
-   -- EASTCLIFF
+   local route = gRoutes:route_from_digits(destination_number)
 
-   elseif (dest == "18314658399") then
-      aLeg:setVariable("sip_from_display", "ECF: "..caller_id_name)
-      dispatch_internal(aLeg, "546");
-      return
+   if route then
+      --
+      -- If the dialstring for the first route is a route name
+      -- in its own right, use that instead, this allows a top-level
+      -- rule to branch to a more complicated rule, instead of 
+      -- being duplicated everwhere.
+      --
+      
+      local alt_route = gRoutes:route_from_digits(route:get_route())
+
+      if (alt_route) then
+	 route_call_from_internal(source_obj, alt_route:get_id())
+	 return
+      else
+	 route_call_from_internal(source_obj, destination_number)
+	 return
+      end
    end
 
-   logError("No incoming DIDs match: "..dest)
-   sounds.sit(aLeg, "intercept");
+   logError("No incoming DIDs match: "..destination_number)
+   sounds.sit(source_obj:get_fs_session(), "intercept");
 end
 
 --

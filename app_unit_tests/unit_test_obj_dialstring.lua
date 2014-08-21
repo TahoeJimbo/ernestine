@@ -13,7 +13,7 @@ function _ut_Dialstring.run_custom_test(test)
    dialstring:set_excluded_extension(test.excluded_extension)
    dialstring:set_default_domain(test.default_domain)
 
-   if (test.additional_vars) then 
+   if test.additional_vars then 
       for _, assignment in ipairs(test.additional_vars) do
 	 local parts = string_split(assignment, "=")
 	 
@@ -187,6 +187,22 @@ function _ut_Dialstring.test_012()
       expected = {
 	 { kind = "DS", dialstring = "[call_timeout=30,hangup_after_bridge=true,other=222,testVar=10]User/8001@1.2.3.4:_:[call_timeout=30,hangup_after_bridge=true,other=222,testVar=10]User/4001%9.8.7.6" },
 	 { kind = "FU_VM", dialstring = "546" }
+      }
+   }
+
+   _ut_Dialstring.run_custom_test(test)
+end
+
+function _ut_Dialstring.test_013()
+   local test = {
+      dialstring = "8001|IF_TIME(0800,2200,XXX)",
+      default_domain = "1.2.3.4",
+      excluded_extension = nil,
+      additional_vars = nil,
+      expected = {
+         { kind = "DS", 
+	   dialstring = "[hangup_after_bridge=true]User/8001@1.2.3.4" },
+         { kind = "FU_IF_TIME", dialstring = "0800,2200,XXX" }
       }
    }
 

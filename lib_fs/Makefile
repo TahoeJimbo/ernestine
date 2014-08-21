@@ -5,8 +5,8 @@ LIB_SRC_FILES = fs_ivr.lua \
 		fs_sounds.lua \
 		obj_dialstring.lua \
 		obj_destination.lua \
-		obj_extension.lua \
-		obj_extension_ctrl.lua \
+		obj_route.lua \
+		obj_route_ctrl.lua \
 		obj_gateway.lua \
 		obj_gateway_ctrl.lua \
 		obj_location.lua \
