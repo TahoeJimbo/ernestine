@@ -44,6 +44,8 @@ Dialstring = {}
 --                                     interval
 --      IF_LOC(vmbox,location,route) >> Transfer to route if the owner of the
 --                                      voicemail box is at location
+--      GOTO(route) >> Stops current route and continues to the specified route
+
 --    example:
 --      "wait=30|8001:wait=50,8002|8005|VM(8000)"
 
@@ -302,7 +304,7 @@ function Dialstring:PRIV_parse_custom()
 	    local function_name = global_variables._FUNCTION_NAME
 
 	    if function_name  == "VM" or function_name == "IF_LOC"
-	       or function_name == "IF_TIME" then
+	       or function_name == "IF_TIME" or function_name == "GOTO" then
 
 	       local result = {}
 	       local args = global_variables._0
@@ -359,11 +361,13 @@ function Dialstring:PRIV_process_variable(variable, variables)
 
    if DEBUG_DIALSTRING then table_dump("Callvars before:", variables); end
 
-   local parts = string_split(variable, "=");
+   local parts = string_split(variable, "=")
 
    if #parts == 2 then
       if parts[1] == "wait" then
-	 variables["call_timeout"] = parts[2];
+	 variables["call_timeout"] = parts[2]
+      else
+	 variables[parts[1]] = parts[2]
       end
    end
 

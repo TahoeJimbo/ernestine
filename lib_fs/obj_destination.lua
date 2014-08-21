@@ -317,6 +317,7 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 
 	 if DEBUG_DESTINATION then logInfo("Returning TRY_VOICEMAIL"); end
 	 return "TRY VOICEMAIL", dialstring
+
       elseif kind == "FU_IF_LOC" then
 	 -- LOCATION AWARENESS
 	 local redirect = Destination:PRIV_is_at_location(dialstring)
@@ -324,6 +325,7 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 if redirect then
 	    return "REDIRECT", redirect
 	 end
+
       elseif kind == "FU_IF_TIME" then
 	 -- TIME OF DAY CHECK
 	 local redirect = Destination:PRIV_is_in_timeframe(dialstring)
@@ -331,6 +333,10 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 if redirect then
 	    return "REDIRECT", redirect
 	 end
+
+      elseif kind == "FU_GOTO" then
+	 return "REDIRECT", dialstring
+
       elseif dialstring == "" then
 	 if DEBUG_DESTINATION then logError("Returning FAILED: Internal Error"); end
 	 return "FAILED", "Internal error.  Received an empty dialstring after parsing."
