@@ -90,6 +90,30 @@ if (argv) then
    arg = argv
 end
 
+if #arg == 2 and arg[1] == "SYNTAX" then
+   DEBUG_PARSER = nil
+   DEBUG_ROUTE = nil
+   DEBUG_GATEWAY = nil
+   DEBUG_LOCATION = nil
+
+   local config_parser, error_message = Parser:new(arg[2], dialplan_parser_config)
+
+   if not config_parser then
+      logError("Cannot parse configuration file.")
+      os.exit(1)
+   end
+
+   gLocations  = Location_ctrl:new(config_parser.config_array)
+   gGateways   =  Gateway_ctrl:new(config_parser.config_array)
+   gRoutes     =    Route_ctrl:new(config_parser.config_array)
+
+   if gLocations == nil or gGateways == nil or gRoutes == nil then
+      logError("Error parsing configuration file.")
+      os.exit(1)
+   end
+   return
+end
+
 for key, value in ipairs(arg) do
    if DEBUG then logInfo("Arg: "..key.." = "..value); end
 end
