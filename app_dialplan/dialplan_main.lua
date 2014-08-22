@@ -77,14 +77,31 @@ local dialplan_parser_config = {
    { group_name = "Route_Defaults",     keywords = g_route_defaults_keywords   },
 }
 
-----------------------------------------------------------------
--- MAIN
-----------------------------------------------------------------
 
--- GATHER SOME INITIAL DATA
--- and turn them into global variables.
+function parse_config(path)
 
--- PROCESS ARGUMENTS
+   local parsed_config, error_message = Parser:new(path, dialplan_parser_config)
+
+   if not parsed_config then
+      logError("Cannot parse configuration file.")
+      os.exit(1)
+   end
+
+   gLocations  = Location_ctrl:new(parsed_config.config_array)
+   gGateways   =  Gateway_ctrl:new(parsed_config.config_array)
+   gRoutes     =    Route_ctrl:new(parsed_config.config_array)
+
+   if gLocations == nil or gGateways == nil or gRoutes == nil then
+      logError("Error parsing configuration file.")
+      os.exit(1)
+   end
+   
+   gLocations:load()
+
+   return parsed_config
+end
+
+---------- PROCESS ARGUMENTS ------------------------------------------------------------
 
 if (argv) then
    arg = argv
@@ -96,21 +113,14 @@ if #arg == 2 and arg[1] == "SYNTAX" then
    DEBUG_GATEWAY = nil
    DEBUG_LOCATION = nil
 
-   local config_parser, error_message = Parser:new(arg[2], dialplan_parser_config)
+   parsed_config = parse_config(arg[2])
+   return
+end
 
-   if not config_parser then
-      logError("Cannot parse configuration file.")
-      os.exit(1)
-   end
+if #arg == 2 and arg[1] == "LOCATION" then
+   parsed_config = parse_config(arg[2])
 
-   gLocations  = Location_ctrl:new(config_parser.config_array)
-   gGateways   =  Gateway_ctrl:new(config_parser.config_array)
-   gRoutes     =    Route_ctrl:new(config_parser.config_array)
-
-   if gLocations == nil or gGateways == nil or gRoutes == nil then
-      logError("Error parsing configuration file.")
-      os.exit(1)
-   end
+   table_dump("Location Table:", gLocations.location_data)
    return
 end
 
@@ -123,34 +133,11 @@ if (#arg ~= 3) then
    return
 end
 
-local config_parser, error_message = Parser:new(SCRIPTS.."dialplan_config.txt",
-						dialplan_parser_config)
+---------- DISPATCH ---------------------------------------------------------------------
 
-if not config_parser then
-   logError("Cannot parse configuration file.")
-   return
-end
+local parsed_config = parse_config(SCRIPTS.."dialplan_config.txt")
 
---table_dump("Config array", config_parser.config_array)
-
-gLocations  = Location_ctrl:new(config_parser.config_array)
-gGateways   =  Gateway_ctrl:new(config_parser.config_array)
-gRoutes     =    Route_ctrl:new(config_parser.config_array)
-
-if gLocations == nil or gGateways == nil or gRoutes == nil then
-   logError("Error parsing configuration file.")
-   return
-end
-
-gLocations:load()
-
-if (session) then
-   source_obj = Source:new(session)
-end
-
-
---location.load()
-
+---------- PARSE THE CONFIG FILE --------------------------------------------------------
 
 local destination_digits = arg[2]
 local context = arg[3]
@@ -160,8 +147,10 @@ if (arg[1] == "inbound") then
 	       .."context=<"..context..">");
 
    if (context == "private") then
+      source_obj = Source:new(session, false)
       route_call_from_internal(source_obj, destination_digits);
    elseif (context == "public") then
+      source_obj = Source:new(session, true)
       route_call_from_external(source_obj, destination_digits);
    else
       logError("Invalid context <"..context..">")
