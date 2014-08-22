@@ -308,9 +308,13 @@ function Destination:PRIV_connect_custom_style(source_session)
    local last_reason
 
    for _, result_item in ipairs(results) do
-
+      
       local kind = result_item.kind
       local dialstring = result_item.dialstring
+
+      if DEBUG_DESTINATION then
+	 logInfo("Evaluating <"..kind.."> with args <"..dialstring..">")
+      end
 
       if kind == "FU_VM" then
 	 -- VOICEMAIL!
@@ -323,7 +327,10 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 local redirect = Destination:PRIV_is_at_location(dialstring)
 
 	 if redirect then
+	    if DEBUG_DESTINATION then logInfo("Redirecting to <"..redirect..">"); end
 	    return "REDIRECT", redirect
+	 else
+	    if DEBUG_DESTINATION then logInfo("...no match. Continuing."); end
 	 end
 
       elseif kind == "FU_IF_TIME" then
@@ -331,10 +338,14 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 local redirect = Destination:PRIV_is_in_timeframe(dialstring)
 
 	 if redirect then
+	    if DEBUG_DESTINATION then logInfo("Redirecting to <"..redirect..">"); end
 	    return "REDIRECT", redirect
+	 else
+	    if DEBUG_DESTINATION then logInfo("...not in time range. Continuing."); end
 	 end
 
       elseif kind == "FU_GOTO" then
+	 if DEBUG_DESTINATION then logInfo("Redirecting to <"..dialstring..">"); end
 	 return "REDIRECT", dialstring
 
       elseif dialstring == "" then
@@ -344,6 +355,10 @@ function Destination:PRIV_connect_custom_style(source_session)
 	 --
 	 -- Try to connect the call to this dialstring
 	 --
+	 if DEBUG_DESTINATION then
+	    logError("Trying to connect to <"..dialstring..">")
+	 end
+
 	 local result, message = self:PRIV_connect_freeswitch_style(source_session,
 								    dialstring)
 
@@ -431,6 +446,14 @@ function Destination:PRIV_is_at_location(args_string)
 
    local vm_box = args[1]
    local location = args[2]
+
+   local location_obj = gLocations:get(vm_box)
+
+   if location_obj then
+      if location == location_obj.get_id() then
+	 return args[3]
+      end
+   end
 
    return nil
 end
