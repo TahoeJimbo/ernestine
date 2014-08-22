@@ -354,7 +354,7 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
    if (digit == "9") then
       aLeg:execute("set", "ringback=%(2000,4000,440.0,480.0)")
       aLeg:execute("lua",
-		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." private")
+		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." public")
       return
    end
 
@@ -371,7 +371,7 @@ function mailbox.take_message(mailbox_obj, aLeg, greeting_index,
    if digit == "9" then
       aLeg:execute("set", "ringback=%(2000,4000,440.0,480.0)")
       aLeg:execute("lua",
-		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." private")
+		   "dialplan inbound EMERGENCY_"..mailbox_obj.Extension.." public")
       return
    end
 
