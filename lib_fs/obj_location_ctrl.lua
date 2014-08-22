@@ -59,6 +59,13 @@ function Location_ctrl:location_from_id(location_id)
    return location
 end
 
+function Location_ctrl:location_from_activation_code(activation_code)
+
+   local location = self.location_code[activation_code]
+
+   return location
+end
+
 ----------------------------------------------------------------------------------------
 -- LOCATION STATE
 
@@ -73,6 +80,11 @@ function Location_ctrl:get(extension)
       return self.location_data[extension].location;
    end
 
+end
+
+function Location_ctrl:set(extension, location_id)
+   self.location_data[extension] = location_id
+   self:save()
 end
 
 function Location_ctrl:load()                                --[[ LOCATION_CTRL:LOAD ]]--
@@ -105,7 +117,7 @@ function Location_ctrl:save()                                --[[ LOCATION_CTRL:
 
    --[[ Write the updated config file --]]
 
-   status = Location_ctrl:PRIV_write()
+   status = self:PRIV_write()
 
    if status ~= "OK" then
       logError("Error writing configuration file to disk.")
@@ -132,10 +144,8 @@ function Location_ctrl:PRIV_write()                         --[[ LOCATION_CTRL:W
 
     file:write("\n#  LOCATION STATE\n\n")
 
-    table_dump("LL", self.location_data)
-
     for key, location in pairs(self.location_data) do
-    	file:write("Location {")
+    	file:write("Location {\n")
 	file:write("    extension = \""..key.."\"\n")
 	file:write("    location = \""..location.."\"\n")
 	file:write("}\n")

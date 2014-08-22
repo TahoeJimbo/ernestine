@@ -4,6 +4,7 @@ Location = {}
 g_location_parser_keywords = {
          "id", "description",
 	 "activation_code",
+	 "confirmation_msg",
          "default_caller_id_name","default_caller_id_number",
          "e911_id",
 	 "local_code",
@@ -77,6 +78,10 @@ function Location:get_e911_id()
    if self.e911_id then return self.e911_id; end
 
    return ""
+end
+
+function Location:get_confirmation_msg()
+   return self.confirmation_msg
 end
 
 function Location:get_local_code()
