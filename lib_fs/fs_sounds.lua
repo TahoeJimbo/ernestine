@@ -126,3 +126,9 @@ function sounds.voicemail_beep(session)
 		   "tone_stream://v=-7;%(100,0,440);v=-7;>=2;+=.1;%(400,0,440)");
 
 end
+
+function sounds.confirmation_tone(session)
+
+   session:execute("playback", "tone_stream://L=3;%(100,100,350,440)")
+
+end
