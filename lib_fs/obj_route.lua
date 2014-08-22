@@ -10,6 +10,7 @@ g_route_parser_keywords = {
           "route",
           "many_handsets",
           "location",
+	  "owner_vm_box"
       }
 
 g_route_defaults_keywords = {
@@ -17,6 +18,7 @@ g_route_defaults_keywords = {
           "kind",
           "many_handsets",
           "location",
+	  "owner_vm_box"
       }
 
 --[[
@@ -108,6 +110,9 @@ function Route:get_location_id()
    return self.location
 end
 
+function Route:get_owner_vm_box()
+   return self.owner_vm_box
+end
 
 
 
