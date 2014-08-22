@@ -1,73 +1,5 @@
 
-
-
 --[[ UTILITIES --]]
-
-
---
--- Returns 1 for the user's standard greeting
--- Returns 2-4 for Jim's custom greeting...
---
--- CFNA-VOICEMAIL  X-vm_extension X-vm_greeting 
---
-
-function selectVoicemailGreeting(extension)
-
-   if (extension == "546") then
-      local currentTime = os.time();
-      local dateFields = os.date("*t", currentTime);
-      local hours = dateFields.hour;
-
-      if (hours >= HOUR_BED and hours <= 23) then return 2; end;
-      if (hours >= 0 and hours < 2) then return 2; end;
-      if (hours >= 2 and hours < HOUR_WAKE) then return 3; end;
-   end
-
-   return 1;
-end
-
-
-function extension_546()
-
-   local where = location.get("546")
-
-   if (selectVoicemailGreeting("546") ~= 1) then
-      return extensions["JimDirectVM"]
-
-   elseif (where == kTAHOE) then
-      return extensions["JimTahoe"];
-
-   elseif (where == kOUTSIDE) then
-      return extensions["JimOutside"];
-
-   elseif (where == kSCRUZ) then
-      return extensions["JimScruz"];
-   end
-   
-   logError("Couldn't choose call disposition for extension 546")
-   return nil
-end
-
-function extension_JimWake()
-
-   local where = location.get("546")
-   local extension = nil
-
-   if (where == kTAHOE) then
-      return extensions["JimWakeTahoe"];
-   end
-
-   if (where == kOUTSIDE) then
-      return extensions["JimWakeOutside"];
-   end
-
-   if (where == kSCRUZ) then
-      return  extensions["JimWakeScruz"];
-   end
-
-   logError("Failed to properly wake Jim: ")
-   return nil
-end
 
 -----------------------------------------------------------------------------------------
 -- Calls from internal extensions to internal extensions are handled here...
@@ -95,18 +27,62 @@ function route_call_from_internal(source_obj, destination_digits)
    -- Get some info about the source route...
    --
 
-   if source_obj:get_source_route_obj():get_many_handsets() == true then
-      excluded_extension = ""
-   else
+   local destination_route = gRoutes:route_from_digits(destination_digits)
+   local source_session = source_obj:get_fs_session()
+
+   local source_route_obj = source_obj:get_source_route_obj()
+   local excluded_extension = ""
+
+   if source_route_obj and source_route_obj:get_many_handsets() == false then
       excluded_extension = source_obj:get_source_digits()
    end
+
+   --
+   -- Check for special destinations setting location...
+   --
+
+   local location = gLocations:location_from_activation_code(destination_digits)
+   
+   if location then
+
+      logInfo("Location access code "..destination_digits.." found.")
+
+      --
+      -- Get the owner mailbox, so we set the location...
+      -- 
+
+      if source_route_obj then
+	 local location_box = source_route_obj:get_owner_vm_box()
+
+	 if location_box then
+	    local confirmation_message = location:get_confirmation_msg()
+	    local id = location:get_id()
+
+	    gLocations:set(location_box, id)
+	    
+	    --
+	    -- Play the confirmation message if it exists...
+	    --
+	    source_session:answer()
+	    source_session:sleep(400)
+	    if confirmation_message then
+	       ivr.play(source_session, SOUNDS..confirmation_message)
+	    else 
+	       sounds.confirmation_tone(session)
+	    end
+	    logInfo("Location for <"..location_box.."> set to <"..id..">")
+	    return
+	 end
+
+      end
+      return
+   end
+
 
    --
    -- Fetch the destination route
    --
 
-   local destination_route = gRoutes:route_from_digits(destination_digits)
-   local source_session = source_obj:get_fs_session()
 
    if destination_route == nil then
       logError("No route found to <"..destination_digits..">")
@@ -178,7 +154,8 @@ function route_call_from_external(source_obj, destination_number)
 
    -- Sanity check
 
-   if destination_number:sub(1,2) == "+1" or destination_number:sub(1,1) == "1" then
+   if destination_number:sub(1,2) == "+1" or destination_number:sub(1,1) == "1" 
+      or destination_number:match("^EMERGENCY_.+$") then
       --
       -- Success!
       --
