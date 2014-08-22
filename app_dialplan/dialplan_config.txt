@@ -21,6 +21,7 @@ Location {
 	   local_code = "831"
 
 	   activation_code = "*7"    # "*S"
+	   confirmation_msg = "Home_Auto/location-set-to-santa-cruz.wav"
 
 	   default_caller_id_name = "Jim Hayes (SCRUZ)"
 	   default_caller_id_number = "8314650752"
@@ -39,6 +40,7 @@ Location {
 	   default_caller_id_number = "5305231043"
 
 	   activation_code = "*8"    # "*T"
+	   confirmation_msg = "Home_Auto/location-set-to-lake-tahoe.wav"
 
 	   e911_id = "5305231043"
          }
@@ -54,6 +56,7 @@ Location {
 	   default_caller_id_number = "5305233073"
 
 	   activation_code = "*6"    #-- "*O"
+#	   confirmation_msg = "Home_Auto/location-set-to-outside.wav"
 
 	   e911_id = "5305233073"
          }
@@ -142,29 +145,35 @@ Gateway {
 #
 
 Route_Defaults {
-	kind = "inbound/public"	
-	location = "tahoe"
-	domain = "10.11.0.3"
+      kind = "inbound/public"	
+      location = "tahoe"
+      domain = "10.11.0.3"
+      owner_vm_box = "546"
 }
 
 Route {
-     id = "15305231043"
-     description = "Tahoe Main Number"
-
-     route = "GOTO(Jim)"
+      id = "15305231043"
+      description = "Tahoe Main Number, inbound from FlowRoute"
+      route = "GOTO(Jim)"
 }   
 
 Route {
-     id = "15305231044"
-     description = "Direct to Voicemail"
-     route =   "GOTO(Jim_DirectVM)"
+      id = "15305231044"
+      description = "Direct to Voicemail, inbound from FlowRoute"
+      route =   "GOTO(Jim_DirectVM)"
 }
 
 Route {
-     id = "18314650752"
-     description = "Santa Cruz Main Number"
-     route = "GOTO(15305231043)"           # Handle the same as my tahoe number.
-     location = "scruz"
+      id = "15305259155"
+      description = "Tahoe AT&T Analog Backup, inbound via AT&T/Grandstream box"
+      route = "GOTO(15305231043)"
+}
+
+Route {
+      id = "18314650752"
+      description = "Santa Cruz Main Number, inbound from FlowRoute"
+      route = "GOTO(15305231043)"
+      location = "scruz"
 }
 
 # Unanswered/busy calls from my cell arrive here
