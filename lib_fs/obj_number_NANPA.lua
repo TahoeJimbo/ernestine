@@ -62,7 +62,7 @@ function Number:parse_NANPA()
       return "service", result
    end
 
-   logError(self.raw_number.." is not a NANPA formatted number.")
+   -- logError(self.raw_number.." is not a NANPA formatted number.")
    return nil, nil
 end
 

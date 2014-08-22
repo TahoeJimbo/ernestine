@@ -89,7 +89,6 @@ function Number:PRIV_parse()
    end
 
    if self.kind == nil then
-      logError("<"..self.raw_number.."> in <"..self.plan.."> appears to be invalid.")
       return nil
    end
 end
