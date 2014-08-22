@@ -25,12 +25,14 @@ Fields:
 -- reduce a lot of duplicated code.
 --
                                                                      --[[ SOURCE:NEW ]]--
-function Source:new(fs_source_leg)
+function Source:new(fs_source_leg, is_external)
    
    if fs_source_leg == nil then 
       logError("Invalid argument.")
       return nil
    end
+
+   is_external = is_external or false
    
    local object = {}
    setmetatable(object, self)
@@ -39,23 +41,45 @@ function Source:new(fs_source_leg)
    -- Determine the location of the source number if possible.
    
    local source_digits = fs_source_leg:getVariable("sip_from_user_stripped")
-   local source_route = gRoutes:route_from_digits(source_digits)
-   local source_location_id = source_route:get_location_id()
+   local source_route
+   local source_location_id
+   local location_obj
+   local source_numbering_plan
+   local source_local_code
 
-   if source_location_id == nil then
-      logError("Cannot determine location of source <"..source_digits..">")
-      return nil
+   if is_external == false then
+      --
+      -- Internal calls should always have a location...
+      --
+      source_route = gRoutes:route_from_digits(source_digits)
+      if source_route == nil then
+	 return nil
+      end
+      
+      source_location_id = source_route:get_location_id()
+
+      if source_location_id == nil then
+	 logError("Cannot determine location of source <"..source_digits..">")
+	 return nil
+      end
+
+      location_obj = gLocations:location_from_id(source_location_id)
+      source_numbering_plan = location_obj:get_numbering_plan()
+      source_local_code = location_obj:get_local_code()
+   else
+      --
+      -- Until we can determine the location of the inbound call
+      -- we punt and choose NANPA, which will likely work with all
+      -- providers that return international ITU canonical numbers.
+      --
+      source_numbering_plan = "NANPA"
+      source_local_code = "000"
    end
-
-   local location_obj = gLocations:location_from_id(source_location_id)
-
-   local source_numbering_plan = location_obj:get_numbering_plan()
-   local source_local_code = location_obj:get_local_code()
 
    local destination_digits = fs_source_leg:getVariable("sip_to_user")
    local destination_number_obj
 
-   if destination_digits then
+   if destination_digits and is_external == false then
       destination_number_obj = Number:new(source_numbering_plan,
 					  source_local_code,
 					  destination_digits)
