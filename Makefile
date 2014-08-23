@@ -49,3 +49,28 @@ install:
 	@echo ""
 
 
+# This target builds a monolithic file of all the source
+# so a static semantic checking tool (lua-inspect) can process it
+# and ferret out unused variables, shadowed globals variables, etc.
+
+LUA_INSPECT_OUTPUT = /home/jim/Desktop/lua-inspect-master
+LUA_INSPECT = $(LUA_INSPECT_OUTPUT)/luainspect
+
+LUA_INSPECT_ARGS = -fhtml -lhtmllib
+
+LUA_APP_TARGETS = dialplan voicemail voicemail_cli unit_tests ivr_chaos
+
+inspect: targets
+	@echo "Building inspection files for source analysis tools:"
+	@for DIR in ${TARGETS} ; do \
+	echo "   $${DIR}" ; \
+	make -s -C $${DIR} inspect || exit 1 ; \
+	done
+	@for TARGET in ${LUA_APP_TARGETS} ; do \
+	echo -n "   Inspection file for $${TARGET}..." ; \
+	rm -f ${LUA_INSPECT_OUTPUT}/$${TARGET}.html ; \
+	${LUA_INSPECT} ${LUA_INSPECT_ARGS} app_$${TARGET}/$${TARGET}.inspect.lua \
+		 > ${LUA_INSPECT_OUTPUT}/$${TARGET}.html ; \
+	echo "done" ; \
+	done
+
