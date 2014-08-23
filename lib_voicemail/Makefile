@@ -15,7 +15,12 @@ install:
 	cp helper ../bin
 
 clean:
-	rm -f $(LIB_NAME) ../lib/$(LIB_NAME)
 	rm -f helper ../bin/helper
+	rm -f $(LIB_NAME) ../lib/$(LIB_NAME)
+	rm -f $(LIB_NAME).inspect.lua ../lib/$(LIB_NAME).inspect.lua
 
+inspect:
+	rm -f $(LIB_NAME).inspect.lua ../lib/$(LIB_NAME).inspect.lua
+	cat $(LIB_SRC_FILES) > $(LIB_NAME).inspect.lua
+	cp $(LIB_NAME).inspect.lua ../lib
 
