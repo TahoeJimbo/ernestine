@@ -173,7 +173,7 @@ function Parser:expecting_open_brace(token)
       return kParseStateWantKeyword, nil
    end
 
-   return nil, "Expecting \"{\" after the \""..self_current_group_name.."\" group name."
+   return nil, "Expecting \"{\" after the \""..self.current_group_name.."\" group name."
 end
 
 function Parser:expecting_keyword(token)

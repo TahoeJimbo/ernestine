@@ -201,7 +201,7 @@ function DP_FUNC_echo_test(fs_session)
    sounds.voicemail_beep(fs_session)
    fs_session:execute("echo")
    ivr.play(fs_session, ANNOUNCEMENTS.."demo-echodone.wav")
-   ds_session:hangup()
+   fs_session:hangup()
 end
 
 function DP_FUNC_echo_test_delayed(fs_session)

@@ -293,8 +293,6 @@ end
                                               --[[ NUMBER:PRIV_NANPA_PARSE_EMERGENCY ]]--
 function Number:PRIV_NANPA_parse_emergency()
 
-   local emergency_number = nil
-   
    if self.raw_number == "911" then
       if DEBUG_NUMBER then
 	 logInfo("Returning emergency number <911>")

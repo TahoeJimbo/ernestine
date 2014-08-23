@@ -87,8 +87,6 @@ function Gateway:make_destination_for_number(destination_number_obj, source_loca
 		 " in "..source_location_obj.id)
    end
 
-   local dialstring
-
    local cid_name, cid_number = source_location_obj:get_caller_id_info()
 
    if destination_number_obj.kind == "emergency" then

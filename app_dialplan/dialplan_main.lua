@@ -154,7 +154,7 @@ if (arg[1] == "inbound") then
       route_call_from_external(source_obj, destination_digits);
    else
       logError("Invalid context <"..context..">")
-      sounds.sit(fs_session, "reorder-local");
+      sounds.sit(session, "reorder-local");
    end
 
    logError("ENDING INBOUND DIALPLAN: dest=<"..destination_digits..">, "
@@ -177,6 +177,6 @@ end
 -- Ack. Extreme brokenness here. :-)
 --
 
-sounds.sit(aLeg, "vacant")
+sounds.sit(session, "vacant")
 
 

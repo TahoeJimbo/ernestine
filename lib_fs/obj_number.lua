@@ -33,6 +33,7 @@ function Number:new(numbering_plan, local_code, number)
    end
 
    local object = {}
+
    setmetatable(object, self)
    self.__index = self
 

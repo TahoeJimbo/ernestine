@@ -11,7 +11,7 @@ function dispatch_outbound(source_obj, context, destination_digits, forced_cid)
 							      dest_number_obj)
 
    if destinations == nil or #destinations == 0 then
-      sounds.sit(aLeg, "vacant")
+      sounds.sit(source_obj:get_fs_session(), "vacant")
       return
    end
 
@@ -27,5 +27,5 @@ function dispatch_outbound(source_obj, context, destination_digits, forced_cid)
    end
 
    logError("Call could not be routed.  All routes failed.")
-   sounds.sit(aLeg, "vacant")
+   sounds.sit(source_obj:get_fs_session(), "vacant")
 end
