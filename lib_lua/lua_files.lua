@@ -1,17 +1,16 @@
 
-file_debug=true
 
 -----FILE UTILS----------------------------------------------------------------
 
 function PRIV_execute(command)
 
-   if (file_debug) then
+   if DEBUG_FILE then
       logInfo("exec: <"..command..">")
    end
 
    local ok, term_method, status_code = os.execute(command)
 
-   if (ok) then
+   if ok then
       return true
    end
 
@@ -24,7 +23,7 @@ end
 
 function file_rename(source_file, dest_file)
 
-   if (source_file == dest_file) then
+   if source_file == dest_file then
       logError("rename failed: files have same name: "..source_file)
       return false
    end
