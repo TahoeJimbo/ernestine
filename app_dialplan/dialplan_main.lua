@@ -133,11 +133,9 @@ if (#arg ~= 3) then
    return
 end
 
----------- DISPATCH ---------------------------------------------------------------------
+---------- PARSE THE CONFIG FILE --------------------------------------------------------
 
 local parsed_config = parse_config(SCRIPTS.."dialplan_config.txt")
-
----------- PARSE THE CONFIG FILE --------------------------------------------------------
 
 local destination_digits = arg[2]
 local context = arg[3]
@@ -165,6 +163,8 @@ end
 if (arg[1] == "outbound") then
    logError("STARTING OUTBOUND DIALPLAN: dest=<"..destination_digits..">, "
 	       .."context=<"..context..">");
+
+   source_obj = Source:new(session, false)
 
    dispatch_outbound(source_obj, context, destination_digits, nil)
 
