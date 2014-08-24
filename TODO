@@ -1,6 +1,9 @@
 
 TODO:
 
-Modify dialstring VM processor to understand greeting numbers
-Modify dialstring processer to understand IF_LOC and IF_TIME
-Modify dialstring processor to allow control flow changes.
+
+To rejigger SNOM e-mail LED to light and disable the obnoxious blinking on missed calls:
+
+http://10.11.0.31/dummy.htm?settings=save&led_on=ON%20BUSY%20IN_A_CALL%20IN_A_MEETING%20HOLDING%20DND%20UNAVAILABLE%20ACTIVE%20INACTIVE%20AWAY%20AVAILABLE%20PhoneHasCall%20CurrentIdentityHasVoiceMessages
+http://10.11.0.31/dummy.htm?settings=save&led_call_indicator_usage=PhoneHasCallInStateRinging%20PhoneHasCall
+http://10.11.0.31/dummy.htm?settings=save&led_message_usage=CurrentIdentityHasVoiceMessages

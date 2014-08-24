@@ -15,7 +15,7 @@ CARPECHAOS=    SOUNDS.."CarpeChaos/"
 
 VM_DIR=     FREESWITCH.."var/Voicemail/"
 VM_CONFIG=  VM_DIR.."VM.config"
-VM_CONFIG_BACKUP=  VM_CONFIG..".bak"
+VM_CONFIG_BACKUP =  VM_CONFIG..".bak."
 VM_MAILBOX_PREFIX = VM_DIR.."box-"
 
 LOC_CONFIG = VM_DIR.."LOC.config"
