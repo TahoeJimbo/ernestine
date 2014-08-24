@@ -127,7 +127,7 @@ to match your configuration.  These are just a few examples.
 ```
 
 ### Simple Voicemail
-A brutally simple voicemail client is included, and again, it's probably good for showing how to do FreeSWITCH™ stuff in Lua.  (Or as a starting point for your own system.)  It has a long way to go before being antyhing more than useful to me. :-)
+A brutally simple voicemail client is included, and again, it's probably good for showing how to do FreeSWITCH™ stuff in Lua.  (Or as a starting point for your own system.)  It has a long way to go before being anything more than useful to me. :-)
 
 ### Other stuff...
-I use a custom set of audio prompts recorded by a friend (a voice over actor), instead of the default FreeSWITCH™ library.  Don't expect any of the voice announcements to work until you adapt them to your own prompts.
+I use a custom set of audio prompts recorded by a friend (a voice-over actor), instead of the default FreeSWITCH™ library.  Don't expect any of the voice announcements to work until you adapt them to your own prompts.
