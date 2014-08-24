@@ -4,23 +4,25 @@
 --
 -- get_mailbox(session)
 --
+-- Asks the caller to enter a mailbox number
+--
 -- returns the mailbox number, or "failed"
 --
-function get_mailbox(aLeg)
+function get_mailbox(fs_session)
 
    local digits, status;
 
    for x=1, MAX_AUTH_ATTEMPTS do
-      digits, status = ivr.prompt_multi_digit(aLeg,
-				      VM.."enter-mailbox.wav", "#");
+      digits, status = ivr.prompt_multi_digit(fs_session,
+					      VM.."enter-mailbox.wav", "#");
       if (status == "valid") then
 	 if (config[digits]) then
 	    -- We have a box!
 	    return digits;
 	 else
-	    ivr.play(aLeg, VM.."extension.wav")
-	    recite.phone_number(aLeg, digits);
-	    aLeg:sleep(500);
+	    ivr.play(fs_session, VM.."extension.wav")
+	    recite.phone_number(fs_session, digits);
+	    fs_session:sleep(500);
 	 end
       end
    end
@@ -31,19 +33,21 @@ end
 --
 -- get_password(session, mailbox)
 --
+-- Asks the caller to enter a password
+--
 -- returns "valid" or "invalid"
 --
 
-function get_password(aLeg, mailbox_number)
+function get_password(fs_session, mailbox_number)
 
    local prompt = SOUNDS.."Call_Center/agent-pass.wav";
    local digits, status;
 
    for x=1, MAX_AUTH_ATTEMPTS do
-      digits, status = ivr.prompt_multi_digit(aLeg, prompt, "#");
+      digits, status = ivr.prompt_multi_digit(fs_session, prompt, "#");
 
       if (status == "valid") then
-	 local box_config = config[mailbox_number];
+	 local box_config = g_vm_config.config[mailbox_number];
 	 if (box_config.password == digits) then
 	    return "valid";
 	 else 
@@ -60,7 +64,7 @@ end
 
 -- returns mailbox_obj if successful, or nil otherwise.
 
-function authenticate(aLeg, mailbox_number)
+function authenticate(fs_session, mailbox_number)
 
    local mailbox_obj;
    local status;
@@ -68,32 +72,32 @@ function authenticate(aLeg, mailbox_number)
    -- Get the mailbox first, if we don't have it already...   
 
    if (mailbox_number == nil) then
-      mailbox_number = get_mailbox(aLeg);
+      mailbox_number = get_mailbox(fs_session);
       
       if (mailbox_number == "failed") then
-	 ivr.play(aLeg, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
-	 ivr.play(aLeg, ANNOUNCEMENTS.."hangup-try-again.wav");
+	 ivr.play(fs_session, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
+	 ivr.play(fs_session, ANNOUNCEMENTS.."hangup-try-again.wav");
 	 return nil;
       end
    end
 
    -- Get the password.
 
-   status = get_password(aLeg, mailbox_number);
+   status = get_password(fs_session, mailbox_number);
 
    if (status == "invalid") then
-      ivr.play(aLeg, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
-      ivr.play(aLeg, ANNOUNCEMENTS.."hangup-try-again.wav");
+      ivr.play(fs_session, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
+      ivr.play(fs_session, ANNOUNCEMENTS.."hangup-try-again.wav");
       return nil;
    end
 
-   mailbox_obj = mailbox.open(mailbox_number);
+   mailbox_obj = Mailbox:open_box(mailbox_number);
 
    return mailbox_obj;
 end
 
 
-function main_menu(aLeg, mailbox_obj)
+function main_menu(fs_session, mailbox_obj)
 
    local digits = "";
    local errors = 4;
@@ -103,14 +107,14 @@ function main_menu(aLeg, mailbox_obj)
 
    repeat
 
-      mailbox_obj = mailbox.reopen(mailbox_obj);
+      mailbox_obj = Mailbox:open_box(mailbox_obj.box_number);
 
-      digits = mailbox.announce_stats(mailbox_obj, aLeg)
+      digits = mailbox_obj:announce_stats(fs_session)
 
       repeat
-	 if (aLeg:ready()) then
+	 if (fs_session:ready()) then
 
-	 -- Start menu
+	    -- Start menu
 
 	    local box_menu = {}
 	    local box_index = 0;
@@ -126,14 +130,14 @@ function main_menu(aLeg, mailbox_obj)
 	    end
 
 	    if (box_index ~= 0) then
-	       digits = ivr.prompt_list(aLeg, box_menu, 4000);
+	       digits = ivr.prompt_list(fs_session, box_menu, 4000);
 	       if (digits == "") then
 		  errors = errors - 1;
 	       else
 		  break;
 	       end
 	    else
-	       aLeg:sleep(1000);
+	       fs_session:sleep(1000);
 	       return;
 	    end
 	 else
@@ -142,26 +146,26 @@ function main_menu(aLeg, mailbox_obj)
       until (errors <=0);
 
       if (errors <= 0) then
-	 ivr.play(aLeg, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
-	 ivr.play(aLeg, ANNOUNCEMENTS.."hangup-try-again.wav");
+	 ivr.play(fs_session, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
+	 ivr.play(fs_session, ANNOUNCEMENTS.."hangup-try-again.wav");
 	 return;
       end
 
       if (digits == "1" and mailbox_obj.N > 0) then
-	 mailbox.set_mode(mailbox_obj, "N");
-	 status = mailbox_play_menu(mailbox_obj, aLeg);
+	 mailbox_obj:set_mode("N");
+	 status = vm_box_execute_menu(mailbox_obj, fs_session);
       elseif (digits == "2" and mailbox_obj.S > 0) then
-	 mailbox.set_mode(mailbox_obj, "S");
-	 status = mailbox_play_menu(mailbox_obj, aLeg);
+	 mailbox_obj:set_mode("S");
+	 status = vm_box_execute_menu(mailbox_obj, fs_session);
       else
-	 ivr.play(aLeg, SOUNDS.."Conference/conf-errormenu.wav");
+	 ivr.play(fs_session, SOUNDS.."Conference/conf-errormenu.wav");
 	 errors = errors - 1;
       end
 
-   until ((not aLeg:ready()) or (errors >= 5) or (status == "error"));
+   until ((not fs_session:ready()) or (errors >= 5) or (status == "error"));
 
    if (errors <= 0) then
-      ivr.play(aLeg, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
-      ivr.play(aLeg, ANNOUNCEMENTS.."hangup-try-again.wav");
+      ivr.play(fs_session, ANNOUNCEMENTS.."sorry-youre-having-problems.wav");
+      ivr.play(fs_session, ANNOUNCEMENTS.."hangup-try-again.wav");
    end
 end

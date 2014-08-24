@@ -3,7 +3,7 @@ APP_NAME = voicemail_cli
 
 APP_SOURCE_FILES = voicemail_cli.lua
 APP_HEADER_FILES = ../DEBUG.lua ../CONFIGURATION.lua ../compatibility_shim.lua
-APP_LIBS = ../lib/lib_fs ../lib/lib_lua ../lib/lib_voicemail
+APP_LIBS = ../lib/lib_fs ../lib/lib_lua ../lib/lib_voicemail ../lib/lib_parser
 
 all:
 	luac -o $(APP_NAME) $(APP_HEADER_FILES) $(APP_LIBS) $(APP_SOURCE_FILES)

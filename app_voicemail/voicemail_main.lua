@@ -1,4 +1,57 @@
 
+
+function vm_menu_entrypoint(fs_session, mailbox_number)
+
+   g_vm_config, error_message = VM_config:new()
+
+   if g_vm_config == nil then
+      logError(error_message)
+      sounds.sit(fs_session, "reserved")
+      return nil
+   end
+
+   fs_session:answer();
+   fs_session:sleep(300);
+   
+   local mailbox_obj = authenticate(fs_session, mailbox_number)
+   if mailbox_obj == nil then
+      return
+   end
+
+   main_menu(fs_session, mailbox_obj)
+
+   fs_session:hangup()
+end
+
+function vm_record_entrypoint(fs_session, mailbox_number, greeting)
+
+   g_vm_config, error_message = VM_config:new()
+
+   if g_vm_config == nil then
+      logError(error_message)
+      sounds.sit(fs_session, "reserved")
+      return
+   end
+
+   fs_session:answer()
+   fs_session:sleep(300)
+   
+   local mailbox_obj, status = Mailbox:open_box(mailbox_number)
+
+   if mailbox_obj == nil then
+      ivr.play(fs_session, VM.."the-person-at-extension.wav")
+      recite.number_digits_smart(fs_session, mailbox_number)
+      ivr.play(fs_session, VM.."sender-does-not-have-a-mailbox.wav")
+      return "ERR"
+   end
+
+   status = mailbox_obj:take_message(fs_session, greeting, caller_id_number)
+   fs_session:hangup();
+   return "OK";
+end
+
+
+
 ----------------------------------------------------------------
 -- MAIN
 ----------------------------------------------------------------

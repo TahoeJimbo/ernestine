@@ -1,7 +1,7 @@
 
-function mailbox_make_menu(mailbox_obj)
+function vm_make_box_menu(mailbox_obj)
 
-   local current_index = mailbox_obj.CurrentIndex;
+   local current_index = mailbox_obj.current_index;
    local mailbox_mode = mailbox_obj.Mode;
 
    local last = false;
@@ -59,7 +59,7 @@ function mailbox_make_menu(mailbox_obj)
    return menu_list;
 end
 
-function mailbox_play_menu(mailbox_obj, aLeg)
+function vm_box_execute_menu(mailbox_obj, fs_session)
 
    local exitRequested = false;
    local errorCount = 4;
@@ -68,13 +68,13 @@ function mailbox_play_menu(mailbox_obj, aLeg)
    local digits;
 
    mailbox_obj.D = {};
-   mailbox_obj.CurrentIndex = 0;
+   mailbox_obj.current_index = 0;
    
-   played, digits = mailbox.next_message(mailbox_obj, aLeg);
+   played, digits = mailbox_obj:next_message(fs_session);
 
    repeat 
       local disposition;
-      local current_index = mailbox_obj.CurrentIndex;
+      local current_index = mailbox_obj.current_index;
 
       if (mailbox_obj.D[current_index]) then
 	 disposition = mailbox_obj.D[current_index];
@@ -86,8 +86,8 @@ function mailbox_play_menu(mailbox_obj, aLeg)
       -- play the menu...
 
       if (digits == "") then
-	 local menu_list =  mailbox_make_menu(mailbox_obj);
-	 digits = ivr.prompt_list(aLeg, menu_list, 2000);
+	 local menu_list =  vm_make_box_menu(mailbox_obj);
+	 digits = ivr.prompt_list(fs_session, menu_list, 2000);
       end
 
       -- Still no response?
@@ -101,27 +101,27 @@ function mailbox_play_menu(mailbox_obj, aLeg)
 
       elseif (digits == "3") then
 	 digits = ""
-	 mailbox.announce_envelope(mailbox_obj, aLeg);
+	 mailbox_obj:announce_envelope(fs_session);
 
       -- Playback control(4==prev, 5=current, 6=next)
 
       elseif (digits == "4") then
-	 played, digits = mailbox.previous_message(mailbox_obj, aLeg);
+	 played, digits = mailbox_obj:previous_message(fs_session);
 	 
 	 if (not played) then
-	    ivr.play(aLeg, SOUNDS.."Conference/conf-errormenu.wav");
+	    ivr.play(fs_session, SOUNDS.."Conference/conf-errormenu.wav");
 	    errorCount = errorCount - 1;
 	    digits = ""
 	 end
 
       elseif (digits == "5") then
-	 played, digits = mailbox.play_current(mailbox_obj, aLeg);
+	 played, digits = mailbox_obj:play_current(fs_session);
 
       elseif (digits == "6") then
-	 played, digits = mailbox.next_message(mailbox_obj, aLeg);
+	 played, digits = mailbox_obj:next_message(fs_session);
 
 	 if (not played) then 
-	    ivr.play(aLeg, SOUNDS.."Conference/conf-errormenu.wav");
+	    ivr.play(fs_session, SOUNDS.."Conference/conf-errormenu.wav");
 	    errorCount = errorCount - 1;
 	    digits = ""
 	 end
@@ -132,12 +132,12 @@ function mailbox_play_menu(mailbox_obj, aLeg)
 	 digits = "";
 
 	 if (disposition == "saved") then
-	    ivr.play(aLeg, SOUNDS.."Conference/conf-errormenu.wav");
+	    ivr.play(fs_session, SOUNDS.."Conference/conf-errormenu.wav");
 	    errorCount = errorCount - 1;
 	 else
-	    ivr.play(aLeg, VM.."saved.wav");
+	    ivr.play(fs_session, VM.."saved.wav");
 	    disposition = "saved"
-	    status, digits = mailbox.next_message(mailbox_obj, aLeg);
+	    status, digits = mailbox_obj:next_message(fs_session);
 	 end
 	 mailbox_obj.D[current_index] = disposition;
 
@@ -145,17 +145,17 @@ function mailbox_play_menu(mailbox_obj, aLeg)
 	 digits = "";
 
 	 if (disposition == "deleted") then
-	    ivr.play(aLeg, VM.."message-undeleted.wav");
+	    ivr.play(fs_session, VM.."message-undeleted.wav");
 	    disposition = "";
 	 else
-	    ivr.play(aLeg, VM.."message-deleted.wav");
+	    ivr.play(fs_session, VM.."message-deleted.wav");
 	    disposition = "deleted";
-	    status, digits = mailbox.next_message(mailbox_obj, aLeg);
+	    status, digits = mailbox_obj:next_message(fs_session);
 	 end
 	 mailbox_obj.D[current_index] = disposition;
 
       else
-	 ivr.play(aLeg, SOUNDS.."Conference/conf-errormenu.wav");
+	 ivr.play(fs_session, SOUNDS.."Conference/conf-errormenu.wav");
 	 digits = "";
       end
 
@@ -167,11 +167,11 @@ function mailbox_play_menu(mailbox_obj, aLeg)
 
    -- process the changes to the mailbox
 
-   logInfo("Cleaning up mailbox...");
+   if DEBUG_MAILBOX then logInfo("Cleaning up mailbox..."); end
 
-   mailbox.cleanup(mailbox_obj);
+   mailbox_obj:cleanup();
 
-   logInfo("Returning to main menu...");
+   if DEBUG_MAILBOX then logInfo("Returning to main menu..."); end
 
    return "";
 end

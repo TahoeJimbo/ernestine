@@ -1,9 +1,9 @@
 
 APP_NAME = voicemail
 
-APP_SOURCE_FILES = voicemail_main.lua
+APP_SOURCE_FILES = vm_box_menu.lua vm_main_menu.lua voicemail_main.lua
 APP_HEADER_FILES = ../DEBUG.lua ../CONFIGURATION.lua 
-APP_LIBS = ../lib/lib_fs ../lib/lib_lua ../lib/lib_voicemail
+APP_LIBS = ../lib/lib_fs ../lib/lib_lua ../lib/lib_parser ../lib/lib_voicemail
 
 all:
 	luac -o $(APP_NAME) $(APP_HEADER_FILES) $(APP_LIBS) $(APP_SOURCE_FILES)

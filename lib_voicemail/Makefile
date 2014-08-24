@@ -1,10 +1,7 @@
 
 LIB_NAME = lib_voicemail
-LIB_SRC_FILES = vm.lua \
-		vm_box.lua \
-		vm_box_menu.lua \
-		vm_main_menu.lua \
-		vm_cli.lua 
+LIB_SRC_FILES = vm_config.lua \
+		vm_box.lua
 
 all: 
 	luac -o $(LIB_NAME) $(LIB_SRC_FILES)
