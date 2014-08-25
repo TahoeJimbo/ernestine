@@ -19,7 +19,9 @@ function session.getVariable(s, var)
 end
 
 function session.setVariable(s, var, value)
-   logInfo("Setting variable "..var.." to <"..value..">")
+   if DEBUG_COMPATIBILITY then
+      logInfo("Setting variable "..var.." to <"..value..">");
+   end
 end
 
 function session.execute(s, execString) logInfo("EXECUTE: "..execString); end
@@ -33,7 +35,9 @@ function session.ready(s) logInfo("READY RETURNING TRUE"); return true; end
 function session.destroy(s) logInfo("DESTROY"); end
 
 function session.playAndGetDigits(s, min,max,timeout,term,prompt,error,regex,opt1,opt2,opt3)
-    logInfo("Prompt: "..prompt..", Error: "..error..", Reg-Ex: "..regex)
+    if DEBUG_COMPATIBILITY then
+       logInfo("Prompt: "..prompt..", Error: "..error..", Reg-Ex: "..regex)
+    end
     return "#"
 end
 
@@ -53,17 +57,19 @@ function session.setAutoHangup(s, bool)
 
    if bool_string == nil then bool_string = "???"; end
 
-   logInfo("AUTO HANGUP: "..bool_string)
+   if DEBUG_COMPATIBILITY then logInfo("AUTO HANGUP: "..bool_string); end
 end
 
 event = {}
 
 function event.addHeader(dummy,header, data)
-   logInfo("COMPAT: Event add header: "..header..", "..data)
+   if DEBUG_COMPATIBILITY then 
+      logInfo("COMPAT: Event add header: "..header..", "..data)
+   end
 end
 
 function event.fire(dummy)
-   logInfo("COMPAT: Event fired")
+   if DEBUG_COMPATIBILITY then logInfo("COMPAT: Event fired"); end
 end
 
 
@@ -76,15 +82,22 @@ function freeswitch.consoleLog(level, ...)
 end
 
 function freeswitch.Session(dialString)
-   logInfo("COMPAT: DIALING: "..dialString);
+   if DEBUG_COMPATIBILITY then 
+      logInfo("COMPAT: DIALING: "..dialString);
+   end
    return session;
 end
 
 function freeswitch.bridge(aLeg, bLeg)
-   logInfo("COMPAT: BRIDGING")
+   if DEBUG_COMPATIBILITY then 
+      logInfo("COMPAT: BRIDGING")
+   end
 end
 
 function freeswitch.Event(event_string)
-   logInfo("COMPAT: EVENT "..event_string)
+   if DEBUG_COMPATIBILITY then 
+      logInfo("COMPAT: EVENT "..event_string)
+   end
+
    return event
 end

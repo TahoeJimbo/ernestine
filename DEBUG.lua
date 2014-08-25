@@ -1,6 +1,7 @@
 
 DEBUG = false
 DEBUG_FILE = false
+DEBUG_COMPATIBILITY = false
 
 DEBUG_PARSE = false
 DEBUG_NUMBER = false
