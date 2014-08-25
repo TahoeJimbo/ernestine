@@ -280,7 +280,7 @@ function Mailbox:play_current(fs_session)
    ivr_menu = {}
 
    ivr_menu[1] = file_name
-   ivr_menu[2] = VM.."ding.wav"
+   ivr_menu[2] = "tone_stream://v=-7;%(100,0,440);v=-7;>=2;+=.1;%(400,0,440)"
 
    digits = ivr.prompt_list(fs_session, ivr_menu, 1000)
 
@@ -368,6 +368,14 @@ function Mailbox:take_message(fs_session, greeting_index, caller_id)
 
    if (not caller_id) then
       caller_id = ""
+   end
+
+   if caller_id:sub(1,2) == "+1" then
+      caller_id = caller_id:sub(3,#caller_id)
+   end
+
+   if caller_id:sub(1,1) == "+" then
+      caller_id = caller_id:sub(2,#caller_id)
    end
 
    -- Play the greeting...
