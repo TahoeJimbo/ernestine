@@ -9,7 +9,18 @@ end
 table_private = {}
 table_private.spaces="                                "
 
-function table_private.dump_recursive(theTable, indent)
+
+function table_dump(header, theTable, output_func)
+
+   output_func = output_func or print
+
+   output_func(header);
+   table_private.dump_recursive(theTable, 0, output_func)
+end
+
+---------- PRIVATE ----------------------------------------------------------------------
+
+function table_private.dump_recursive(theTable, indent, output_func)
    
    -- sort the keys to lend a deterministic flair to things.
    -- (And to not confuse the unit-test output comparator.)
@@ -29,25 +40,21 @@ function table_private.dump_recursive(theTable, indent)
       if type(value) == "table" then
 
 	 if (key ~= "__index") then 
-	    print(indentString..key.." is a table:")
+	    output_func(indentString..key.." is a table:")
 	    table_private.dump_recursive(value, indent + 1)
 	 else
-	    print(indentString..key.." is an __index table. Skipping.")
+	    output_func(indentString..key.." is an __index table. Skipping.")
 	 end
       elseif type(value) == "function" then
-	 print(indentString..key.." is a function.")
+	 output_func(indentString..key.." is a function.")
       elseif type(value) == "boolean" then
 	 local boolString
 	 if value == true then boolString = "true"; else boolString = "false"; end
-	 print(indentString..key.."\t"..boolString)
+	 output_func(indentString..key.."\t"..boolString)
       else
-	 print(indentString..key.."\t"..value)
+	 output_func(indentString..key.."\t"..value)
       end
    end
 end
 
-function table_dump(header, theTable)
-   print(header);
-   table_private.dump_recursive(theTable, 0)
-end
 
