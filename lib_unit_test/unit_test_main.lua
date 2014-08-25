@@ -230,7 +230,8 @@ for _, module_name in ipairs(test_modules) do
    end
 
    if _ut_error_count > 0 then
-      error(_ut_error_count.." of ".._ut_test_count.." FAILED.")
+      print(_ut_error_count.." of ".._ut_test_count.." FAILED.")
+      os.exit(1)
    end
 end
 
