@@ -14,7 +14,7 @@ function _ut_Route.test_001()
    _t.id = "test"
    _t.domain = "10.0.0.1"
    _t.route = "wait=30:1234,5678|9876"
-   _t.many_handsets = false
+   _t.many_handsets = "false"
    _t.location = "lusaka"
 
    local route = Route:new(_t, _t_cont)
@@ -62,7 +62,7 @@ function _ut_Route.test_003()
    _t.domain = nil;       route2 = Route:new(_t, _t_cont); _t.domain = "10.0.0.1"
    _t.route = nil;        route3 = Route:new(_t, _t_cont); _t.route = "VM(546)"
    _t.location = nil;     route4 = Route:new(_t, _t_cont); _t_location = "tahoe"
-   _t.many_handsets = nil; route5 = Route:new(_t, _t_cont); _t.many_handsets = true
+   _t.many_handsets = nil; route5 = Route:new(_t, _t_cont); _t.many_handsets = "true"
 
    if route1 or route2 or route3 or route4 or route5 then
       FAIL_BANNER()

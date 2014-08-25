@@ -8,7 +8,7 @@ g_route_parser_keywords = {
           "domain",
 	  "kind",
           "route",
-          "many_handsets",
+          "many_handsets:boolean",
           "location",
 	  "owner_vm_box"
       }
@@ -16,7 +16,7 @@ g_route_parser_keywords = {
 g_route_defaults_keywords = {
           "domain",
           "kind",
-          "many_handsets",
+          "many_handsets:boolean",
           "location",
 	  "owner_vm_box"
       }
@@ -76,15 +76,8 @@ function Route:new(config_pairs, controller)
       return nil
    end
 
-   if object.many_handsets ~= nil then
-      local tf = parse_true_false(object.many_handsets)
-
-      if tf == nil then
-	 logError("Route id <"..object.id.."> many_handsets value <"
-		     ..object.many_handsets..">: should be yes/no/true/false")
-      else
-	 object.many_handsets = tf
-      end
+   if object.many_handsets == nil then 
+      object.many_handsets = false
    end
 
    return object
