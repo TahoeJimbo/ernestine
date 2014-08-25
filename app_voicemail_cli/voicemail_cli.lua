@@ -10,14 +10,14 @@ function mailbox_get_number_from_cli()    --[[ MAILBOX_GET_NUMBER_FROM_CLI --]]
 
         mailbox_num = tonumber(line)
 
-	if (line == nil) or (line == "") then
+	if line == nil or line == "" then
 	   return "ABORT"
-	elseif (mailbox_num == nil) then
+	elseif mailbox_num == nil then
 	    io.write("\nIllegal mailbox number.  Try again.\n")
-	elseif (mailbox_num < 100) or (mailbox_num > 99999) then
+	elseif mailbox_num < 100 or mailbox_num > 99999 then
             io.write("\nMailbox number must be between 100 and 99999.  Try again.\n")
         else
-	    mailbox_valid = true;
+	    mailbox_valid = true
         end
     until (mailbox_valid == true)
 
@@ -29,25 +29,24 @@ function cli_show_status()
 
    local vm_config = g_vm_config.config
 
-   local box_config
    local mailbox_obj
 
    for box_num, box_config in pairs(vm_config) do
-      print("Mailbox "..box_num..":");
+      print("Mailbox "..box_num..":")
       
-      mailbox_obj, status = Mailbox:open_box(box_num);
+      mailbox_obj, status = Mailbox:open_box(box_num)
 
       if mailbox_obj == nil then
 	 print("**** Could not open mailbox <"..box_num.."> for reading: "..
-	       (status or "unknown error"));
+	       (status or "unknown error"))
       else
 
-	 print("  Name: "..box_config.description);
-	 print("  Pass: "..box_config.password);
-	 print("  Greetings: "..mailbox_obj.G);
-	 print("  Messages:");
-	 print("     New:     "..mailbox_obj.N);
-	 print("     Saved:   "..mailbox_obj.S);
+	 print("  Name: "..box_config.description)
+	 print("  Pass: "..box_config.password)
+	 print("  Greetings: "..mailbox_obj.G)
+	 print("  Messages:")
+	 print("     New:     "..mailbox_obj.N)
+	 print("     Saved:   "..mailbox_obj.S)
       end
    end
 end
@@ -59,7 +58,7 @@ function cli_create_mailbox()                      --[[ MAILBOX_CREATE --]]
 
     mailbox_num = mailbox_get_number_from_cli()
 
-    if (mailbox_num == "ABORT") then
+    if mailbox_num == "ABORT" then
         return "ABORT"
     end
 
@@ -67,14 +66,14 @@ function cli_create_mailbox()                      --[[ MAILBOX_CREATE --]]
 
     mailbox_obj, status = Mailbox:open_box(mailbox_num, false)
 
-    if (status == "OK") then
+    if status == "OK" then
         print("\nMailbox number already exists.")
 	return "ERR"
     end
 
     status = g_vm_config:initialize_mailbox_config(mailbox_num)
     
-    if (status ~= "OK") then
+    if status ~= "OK" then
        print("Could not create mailbox configuration: "..status)
        return "ERR"
     end
@@ -95,14 +94,14 @@ function cli_print_edit_menu(box_config, keywords, descriptions)
    for i = 1, #keywords do
       local value = box_config[keywords[i]]
 
-      if (value == nil) then value = ""; end
+      if value == nil then value = ""; end
 
       print("    "..i..": "..descriptions[i].." <"..value..">")
    end
 
    print("")
-   print("    S: Save and exit");
-   print("    C: Cancel without saving");
+   print("    S: Save and exit")
+   print("    C: Cancel without saving")
 
    repeat
       print("")
@@ -140,7 +139,7 @@ function cli_edit_mailbox()                              --[[ MAILBOX_EDIT_FROM_
     local mailbox_num
 
     mailbox_num = mailbox_get_number_from_cli()
-    if (mailbox_num == "ABORT") then
+    if mailbox_num == "ABORT" then
         return "ABORT"
     end
 
@@ -153,7 +152,7 @@ function cli_edit_mailbox()                              --[[ MAILBOX_EDIT_FROM_
 	return
     end
 
-    box_config = g_vm_config.config[mailbox_num];
+    box_config = g_vm_config.config[mailbox_num]
     undo_config = {}
 
     for key, value in pairs(box_config) do
@@ -188,9 +187,9 @@ function cli_edit_mailbox()                              --[[ MAILBOX_EDIT_FROM_
 
     print("<"..item..">")
 
-    if (item == "S" or item == "s") then
+    if item == "S" or item == "s" then
        g_vm_config:update()
-       print("*** Configuration Updated ***");
+       print("*** Configuration Updated ***")
     else
        for key, value in pairs(undo_config) do
 	  box_config[key] = value
@@ -211,7 +210,7 @@ function cli_delete_mailbox()                     --[[ MAILBOX_DELETE_FROM_CLI -
 
     mailbox_num = mailbox_get_number_from_cli()
 
-    if (mailbox_num == "ABORT") then
+    if mailbox_num == "ABORT" then
         return "ABORT"
     end
 
@@ -228,7 +227,7 @@ function cli_delete_mailbox()                     --[[ MAILBOX_DELETE_FROM_CLI -
 
     line = io.read("*line")
 
-    if (line == nil) or (line ~= "YES") then
+    if line == nil or line ~= "YES" then
         io.write("\nDELETION CANCELLED\n\n")
         return "OK"
     end
@@ -252,7 +251,7 @@ function mailbox_serial_from_cli()                     --[[ MAILBOX_SERIAL_FROM_
     
     mailbox_num = mailbox_get_number_from_cli()
 
-    if (mailbox_num == "ABORT") then
+    if mailbox_num == "ABORT" then
         return "ABORT"
     end
 
@@ -260,12 +259,12 @@ function mailbox_serial_from_cli()                     --[[ MAILBOX_SERIAL_FROM_
 
     mailbox_obj, status = mailbox.open(mailbox_num)
 
-    if (status ~= "OK") then
+    if status ~= "OK" then
         io.write("\nMailbox does not exists.\n")
 	return "ERR"
     end
 
-    local done = false;
+    local done = false
 
     repeat
     
@@ -274,18 +273,18 @@ function mailbox_serial_from_cli()                     --[[ MAILBOX_SERIAL_FROM_
 
         serial = mailbox.next_serial(mailbox_obj)
 
-	if (serial == nil) then
+	if serial == nil then
             io.write("Recevied nil from mailbox.next_serial.\n")
         else
             io.write("Recevied <",serial,">.\n")
         end
 
-        io.write("\nPress return to try again, or Q to quit. > ")
+        io.write"\nPress return to try again, or Q to quit. > "
 
 	local line = io.read("*line")
 
 	if (line == nil) or (line == "Q") or (line == "q") then
-            done = true;
+            done = true
         end
 
     until (done == true)
@@ -299,30 +298,30 @@ function cli_repair_config()
    local config = g_vm_config.config
 
    for box_num, box_config in pairs(config) do
-      print("Mailbox "..box_num..":");
+      print("Mailbox "..box_num..":")
       
-      mailbox_obj, status = Mailbox:open_box(box_num);
+      mailbox_obj, status = Mailbox:open_box(box_num)
 
-      if (mailbox_obj == nil) then
+      if mailbox_obj == nil then
 	 print("*** Could not open mailbox <"..box_num.."> for reading: "..
-		  (status or "unknown error"));
+		  (status or "unknown error"))
 
-	 io.write("Delete mailbox from configuration? [no] > ");
+	 io.write("Delete mailbox from configuration? [no] > ")
 
 	 local cmd = io.read("*line")
 	 
-	 if (cmd ~= nil)  then
-	    if (cmd == "yes" or cmd == "Yes") then
-	       print("Removing box <"..box_num.."> from configuration.");
-	       config[box_num] = nil;
-	       changes = changes + 1;
+	 if cmd ~= nil  then
+	    if cmd == "yes" or cmd == "Yes" then
+	       print("Removing box <"..box_num.."> from configuration.")
+	       config[box_num] = nil
+	       changes = changes + 1
 	    end
 	 end
       end
    end
 
-   if (changes > 0) then
-      print("*** Configuration changes made.  Writing new config...");
+   if changes > 0 then
+      print("*** Configuration changes made.  Writing new config...")
       g_vm_config:update()
    end
 end
@@ -333,7 +332,7 @@ end
 
 local vm_config, error_message = VM_config:new()
 
-if (vm_config == nil) then 
+if vm_config == nil then 
    print(error_message)
    os.exit(1)
 end
@@ -352,21 +351,21 @@ repeat
    io.write("\n    T: Test serial number\n")
    io.write("    R: Repair config file\n")
 
-   io.write("\n    Q: Quit\n\n");
+   io.write("\n    Q: Quit\n\n")
 
    io.write("> ")
    cmd = io.read("*line")
 
-   if (cmd == nil) or (cmd == "Q") or (cmd == "q") then
+   if cmd == nil or cmd == "Q" or cmd == "q" then
       finished = true
    end
 
-   if (cmd == "S" or cmd == "s") then cli_show_status(); end
-   if (cmd == "C" or cmd == "c") then cli_create_mailbox(); end
-   if (cmd == "E" or cmd == "e") then cli_edit_mailbox(); end
-   if (cmd == "D" or cmd == "d") then cli_delete_mailbox(); end
-   if (cmd == "T" or cmd == "t") then cli_new_message_sn(); end
-   if (cmd == "R" or cmd == "r") then cli_repair_config(); end
+   if cmd == "S" or cmd == "s" then cli_show_status(); end
+   if cmd == "C" or cmd == "c" then cli_create_mailbox(); end
+   if cmd == "E" or cmd == "e" then cli_edit_mailbox(); end
+   if cmd == "D" or cmd == "d" then cli_delete_mailbox(); end
+   if cmd == "T" or cmd == "t" then cli_new_message_sn(); end
+   if cmd == "R" or cmd == "r" then cli_repair_config(); end
 
 until (finished == true)
 
