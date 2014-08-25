@@ -41,8 +41,22 @@ function cli_show_status()
 	       (status or "unknown error"))
       else
 
+	 local notify_list = box_config.notify_list or "<Default>"
+
+	 local auto_pw = box_config.auto_password
+	 if auto_pw == nil then
+	    auto_pw = "<Default>"
+	 elseif auto_pw == true then
+	    auto_pw = "ON"
+	 else
+	    auto_pw = "OFF"
+	 end
+
 	 print("  Name: "..box_config.description)
 	 print("  Pass: "..box_config.password)
+	 print("   MWI: "..notify_list)
+	 print("AutoPW: "..auto_pw)
+	 print("")
 	 print("  Greetings: "..mailbox_obj.G)
 	 print("  Messages:")
 	 print("     New:     "..mailbox_obj.N)
@@ -95,6 +109,10 @@ function cli_print_edit_menu(box_config, keywords, descriptions)
       local value = box_config[keywords[i]]
 
       if value == nil then value = ""; end
+
+      if type(value) == "boolean" then
+	 if value then value = "ON" else value = "OFF"; end
+      end
 
       print("    "..i..": "..descriptions[i].." <"..value..">")
    end
@@ -159,8 +177,10 @@ function cli_edit_mailbox()                              --[[ MAILBOX_EDIT_FROM_
        undo_config[key] = value
     end
 
-    local editing_keywords = { "description", "password", "notify_list" }
-    local editing_descriptions = { "Name", "Password", "MWI Notify List" }
+    local editing_keywords = { "description", "password",
+			       "notify_list", "auto_password" }
+    local editing_descriptions = { "Name", "Password",
+				   "MWI Notify List", "Auto Password" }
     local item
 
     repeat
@@ -176,12 +196,27 @@ function cli_edit_mailbox()                              --[[ MAILBOX_EDIT_FROM_
        local description = editing_descriptions[item]
        local value = box_config[editing_keywords[item]] or ""
 
+       if type(value) == "boolean" then
+	  if value then value = "ON" else value = "OFF"; end
+       end
+
        io.write("New "..description..": ["..value.."]: ")
        local new_value = io.read("*line")
 
        new_value = new_value or ""
 
-       box_config[editing_keywords[item]] = new_value
+       local kw = editing_keywords[item]
+
+       if kw == "auto_password" then
+	  local bool_value = string_parse_true_false(new_value)
+	  if bool_value == nil then
+	     print(new_value.." is not a valid boolean value.")
+	  else
+	     box_config[kw] = bool_value
+	  end
+       else
+	  box_config[kw] = new_value
+       end
 
     until finished
 
@@ -214,7 +249,7 @@ function cli_delete_mailbox()                     --[[ MAILBOX_DELETE_FROM_CLI -
         return "ABORT"
     end
 
-    --[[ Validatee mailbox number.  Does it exist? --]]
+    --[[ Validate mailbox number.  Does it exist? --]]
 
     mailbox_obj, status = Mailbox:open_box(mailbox_num)
 

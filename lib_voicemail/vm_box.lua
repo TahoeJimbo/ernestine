@@ -86,7 +86,7 @@ end
 function Mailbox:update_mwi()
 
    local notify_array = {}
-   local box_config = g_vm_config[self.box_number]
+   local box_config = g_vm_config.config[self.box_number]
 
    if DEBUG_MAILBOX then logInfo("Updating MWI for box <"..self.box_number..">"); end
 
@@ -96,6 +96,8 @@ function Mailbox:update_mwi()
    else
       notify_array[1] = self.box_number
    end
+
+   table_dump("MWI notify array:", notify_array, logInfo)
 
    for _, box_number_string in ipairs(notify_array) do
 
@@ -110,9 +112,9 @@ function Mailbox:update_mwi()
 			 self.N.."/"..
 			 self.S.." (0/0)")
       end
-      event:addHeader("MWI-Message-Account", "sip:"..
-		      box_number_string.."@10.11.0.3")   -- FIXME: THIS SHOULD NOT
-                                                        -- BE HARDCODED
+      event:addHeader("MWI-Message-Account", "sip:"
+			 ..box_number_string.."@"..INTERNAL_IP)
+
       event:fire()
    end
 end

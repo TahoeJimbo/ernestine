@@ -2,10 +2,13 @@
 
 VM_config = {}
 
-g_vm_box_config_keywords = { "mailbox",
-			     "description",
-			     "password",
-			     "notify_list" }
+g_vm_box_config_keywords = {
+   "mailbox",
+   "description",
+   "password",
+   "notify_list",
+   "auto_password:boolean" 
+}
 
 g_vm_parser_config = {
    { group_name = "Mailbox", keywords = g_vm_box_config_keywords }
@@ -150,10 +153,16 @@ function VM_config:PRIV_write(file_path)
 
    for box_num, box_config in pairs(self.config) do
       file:write("Mailbox {\n")
+      
+      for _,full_key in ipairs(g_vm_box_config_keywords) do
+	 local key, key_kind = Parser:get_name_and_type(full_key)
+	 local value = box_config[key]
 
-      for _,key in ipairs(g_vm_box_config_keywords) do
-	 if box_config[key] then
-	    file:write("    "..key.." = \""..box_config[key].."\"\n")
+	 if value then
+	    if key_kind == "boolean" then
+	       if value == true then value = "YES"; else value = "NO"; end
+	    end
+	    file:write("    "..key.." = \""..value.."\"\n")
 	 end
       end
 

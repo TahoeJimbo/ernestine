@@ -66,8 +66,11 @@ end
 
 function authenticate(fs_session, mailbox_number)
 
-   local mailbox_obj;
-   local status;
+   local mailbox_obj
+   local mailbox_config
+   local status
+
+   mailbox_config = g_vm_config.config[mailbox_number]
 
    -- Get the mailbox first, if we don't have it already...   
 
@@ -82,6 +85,24 @@ function authenticate(fs_session, mailbox_number)
    end
 
    -- Get the password.
+
+   if mailbox_config.auto_password and mailbox_config.auto_password == true then
+      local source_digits = fs_session:getVariable("sip_from_user_stripped")
+      
+      local allowed_extensions
+      
+      if mailbox_config.notify_list and mailbox_config.notify_list ~= "" then
+	 allowed_extensions = ":"..mailbox_config.notify_list..":"
+
+	 if allowed_extensions:match(":"..source_digits..":") then
+	    return Mailbox:open_box(mailbox_number)
+	 end
+      else
+	 if mailbox_number == source_digits then
+	    return Mailbox:open_box(mailbox_number)
+	 end
+      end
+   end
 
    status = get_password(fs_session, mailbox_number);
 
