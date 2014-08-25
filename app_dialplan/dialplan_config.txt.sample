@@ -1,0 +1,287 @@
+
+#----------------------------------------------------------------------------------------
+# SYSTEM LOCATIONS / EMERGENCY DIALING
+#
+# System locations are used to:
+#    * Selecting outgoing trunks for dialing, based on caller's location
+#    * Selecting the correct outgoing trunk or outgoing caller ID for 
+#      emergency calls so 911 information appears on the dispatcher's
+#      terminal
+#    * Selecting the numbering plan to be used for dialed external calls.
+#
+# The "id" defined for each location can be referenced in the "Gateway"
+# and "Extension" configuration groups.
+#
+
+Location {
+           id = "scruz"
+	   description = "Santa Cruz, CA"
+           
+	   numbering_plan = "NANPA"
+	   local_code = "831"
+
+	   activation_code = "*7"    # "*S"
+	   confirmation_msg = "Home_Auto/location-set-to-santa-cruz.wav"
+
+	   default_caller_id_name = "Jim Hayes (SCRUZ)"
+	   default_caller_id_number = "8315550101"
+
+	   e911_id = "8315550101"
+         }
+
+Location {
+           id = "tahoe"
+	   description = "Lake Tahoe, CA"
+
+	   numbering_plan = "NANPA"
+           local_code = "530"
+
+	   default_caller_id_name = "Jim Hayes (TAHOE)"
+	   default_caller_id_number = "5305550102"
+
+	   activation_code = "*8"    # "*T"
+	   confirmation_msg = "Home_Auto/location-set-to-lake-tahoe.wav"
+
+	   e911_id = "5305550101"
+         }
+
+Location {
+           id = "away"
+	   description = "Away from home"
+	   
+	   numbering_plan = "NANPA"
+	   local_code = ""
+
+	   default_caller_id_name = "Jim Hayes (TAHOE)"
+	   default_caller_id_number = "5305550103"
+
+	   activation_code = "*6"    #-- "*O"
+	   confirmation_msg = "Home_Auto/location-set-to-outside.wav"
+
+	   e911_id = "5305550101"
+         }
+
+#----------------------------------------------------------------------------------------
+# GATEWAYS
+#
+# Gateways define interfaces to other phone systems, most likely the
+# PSTN.  Gateway providers often differ in their requirements for 
+# outgoing numbers, so there are formatting options (think "printf()")
+# to massage the digits sent to a gateway.
+#
+# Formatting escapes:
+#   %r = just the bare dialed digits, no changes
+#   %c = the world-wide cannoical represention  (country code + number)
+#
+#   %a = the domestic area/city code.
+#   %l = the domestic local number.
+
+Gateway_Defaults {
+          domestic_numbering_plan = "NANPA"
+	  local_code = "530"
+
+	  outbound_emergency_format = "%l"
+	  outbound_service_format = "%l"
+	  outbound_local_format = "1%a%l"
+	  outbound_domestic_format = "1%a%l"
+
+
+	  outbound_intl_format = "+%c"
+
+	  allowed_call_kinds = "intl, domestic, local, service, emergency"
+        }
+
+Gateway {
+          name = "grandstream-tahoe"
+          freeswitch_profile = "public::grandstream-tahoe"
+	  allowed_call_kinds = "service, emergency"
+
+          trunk_access_code = "*9"    #-- This allows direct access to the PSTN dialtone
+                                      #-- from internal callers.
+	  location = "tahoe"
+
+	  outbound_local_format = "%l"
+	  outbound_intl_format = "011%c"
+        }
+
+Gateway {
+          name = "flowroute"
+	  freeswitch_profile = "public::flowroute"
+
+	  outbound_prefix = "123456789*"
+          outbound_intl_format      = "%c"       #-- country code + number
+        }
+
+Gateway {
+          name = "callcentric-tahoe"
+	  freeswitch_profile = "public::callcentric-tahoe"
+
+	  location = "tahoe"
+        }
+
+Gateway {
+          name = "callcentric-scruz"
+	  freeswitch_profile = "public::callcentric-scruz"
+
+	  location = "scruz"
+        }
+
+#----------------------------------------------------------------------------------------
+# ROUTING
+#
+# Routing takes a "source" call and bridges it with whatever the user dialed.
+#
+# Routing can be applied to inbound/outbound calls from private or public sources
+# 
+# "inbound/public" describes a call arriving from the PSTN, to a DID number.
+# "inbound/private" describes a call dialed internally, for an internal destination
+#
+# outbound/public = Not supported
+# outbound/private = describes a call dialed internally, to a PSTN number.
+#
+
+#
+# INBOUND/PUBLIC DID ROUTES
+#
+
+Route_Defaults {
+      kind = "inbound/public"	
+      location = "tahoe"
+      domain = "10.1.2.3"
+      owner_vm_box = "546"
+}
+
+Route {
+      id = "15305550101"
+      description = "Tahoe Main Number, inbound from FlowRoute"
+      route = "GOTO(Jim)"
+}   
+
+Route {
+      id = "15305550102"
+      description = "Direct to Voicemail, inbound from FlowRoute"
+      route =   "GOTO(Jim_DirectVM)"
+}
+
+Route {
+      id = "15305550103"
+      description = "Tahoe AT&T Analog Backup, inbound via AT&T/Grandstream box"
+      route = "GOTO(15305550101)"
+}
+
+Route {
+      id = "18315550104"
+      description = "Santa Cruz Main Number, inbound from FlowRoute"
+      route = "GOTO(15305550101)"
+      location = "scruz"
+}
+
+# Unanswered/busy calls from my cell arrive here
+
+Route {
+     id = "15305550105"
+     description = "Jim's Cell CFNA/CFBZ"
+     route = "GOTO(15305550101)"           # Handle same as my tahoe number.
+     location = "away"
+}
+
+
+# INBOUND/PRIVATE EXTENSION ROUTES
+#
+# These can be reached by dialing an internal extension number, from an
+# internal phone, or by PSTN routing based on the DID.
+#
+# Physical extensions should be assigned a numeric number, or be assigned
+# a numeric alias pointing to the alphanumeric SIP id of the extension.
+# 
+# Hunt groups can be assigned an alphanumeric name, which can be called
+# by custom logic inside the dialplan.
+#
+
+Route_Defaults {
+        kind = "inbound/private"
+	domain = "10.1.2.3"
+	many_handsets = "NO"
+	location = "tahoe"
+}
+
+#
+# Location-based extensions:
+
+#
+
+Route { id = "Jim"
+        route = "IF_TIME(2100,0200,Jim_GoneToSleep)"     # 9 pm to 2 am
+	       +"|IF_TIME(0200,0800,Jim_NotAwakeYet)"    # 2 am to 8 am
+	       +"|IF_LOC(546,tahoe,Jim_Tahoe)"           # in tahoe
+	       +"|IF_LOC(546,scruz,Jim_Scruz)"           # in santa cruz
+	       +"|IF_LOC(546,away,Jim_Outside)"          # or outside
+	       +"|GOTO(Jim_Tahoe)"                       # catch-all
+}
+
+Route { id = "EMERGENCY_546"                             # VM constructs and calls this
+       route = "IF_LOC(546,tahoe,Jim_WakeTahoe)"         # if 9 is pressed before/during
+	      +"|IF_LOC(546,scruz,Jim_WakeScruz)"        # message recording.
+	      +"|GOTO(Jim_WakeTahoe)"
+}
+
+Route { id = "546" route = "GOTO(Jim)" }
+
+#
+# Basic Hunt groups, resulting from DND processing, or as the result of the
+# location based extensions above
+#
+Route { id = "Jim_GoneToSleep" route = "VM(546,2)" }     # BOX 546, greeting 2
+Route { id = "Jim_NotAwakeYet" route = "VM(546,3)" }     # BOX 546, greeting 3
+
+Route { id = "Jim_Tahoe" route = "wait=40|8001:8002:8003|VM(546)" }
+Route { id = "Jim_Scruz" route = "wait=30|7001|VM(546)" }
+Route { id = "Jim_Outside" route = "wait=30|4001|VM(546)" }
+
+Route { id = "Jim_WakeTahoe" route = "8001:8002:8003:4001" }
+Route { id = "Jim_WakeScruz" route = "7001|4001" }
+Route { id = "Jim_DirectVM"  route = "VM(546)" }
+
+#
+# Tahoe
+#
+
+Route { id = "8000" route = "wait=120|8001:8002:8003:8004:8010" }
+Route { id = "8001" route = "wait=120|8001" many_handsets = "YES" } # DECT
+Route { id = "8002" route = "wait=120|8002" }    # SNOM
+Route { id = "8003" route = "wait=120|8003" }    # SNOM
+Route { id = "8004" route = "wait=120|8004" }    # SNOM
+Route { id = "8005" route = "wait=120|8005" }    # Mac Pro (X-Lite Test)
+
+Route { id = "8010" route = "wait=120|8010" }    # Polycom SIP
+
+Route { id = "8200" route = "8200" }     # Grandstream Analog FXS port
+Route { id = "*9"   route = "8201" }     # Grandstream PSTN FXO port, dialtone)
+
+#
+# Santa Cruz
+#
+
+Route_Defaults {
+       location = "scruz"
+}
+
+Route { id = "7001" route = "wait=120|7001" many_handsets = "YES" }  # DECT
+
+# 
+# Mobile
+#
+
+Route_Defaults {
+	location = "away"
+}
+
+Route { id = "4001" route = "wait=120|4001" }   # iPhone SIP client
+Route { id = "4002" route = "wait=120|4002" }   # iPad SIP client
+
+#
+# Special test extensions...
+#
+
+Route { id = "*3246"   route = "APP(echo_test)" }          #   *ECHO
+Route { id = "*32463"  route = "APP(echo_test_delayed" }   #   *ECHOD
