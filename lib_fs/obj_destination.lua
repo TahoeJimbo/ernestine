@@ -312,6 +312,17 @@ function Destination:PRIV_connect_custom_style(source_session)
       local kind = result_item.kind
       local dialstring = result_item.dialstring
 
+      --
+      -- Do we still have a source leg?  Bail if not.
+      --
+
+      if source_session:ready() ~= true then
+	 --
+	 -- Source bailed.  We're done!
+	 --
+	 return "FAILED", "Source leg of the call disappeared."
+      end
+
       if DEBUG_DESTINATION then
 	 logInfo("Evaluating <"..kind.."> with args <"..dialstring..">")
       end
