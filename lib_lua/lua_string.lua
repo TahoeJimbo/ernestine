@@ -49,11 +49,11 @@ function string_parse_true_false(token)
 
    local token = token:upper()
 
-   if token == "YES" or token == "TRUE" or token == "1" then
+   if token == "YES" or token == "TRUE" or token == "ON" or token == "1" then
       return true
    end
 
-   if token == "NO" or token == "FALSE" or token == "0" then
+   if token == "NO" or token == "FALSE" or token == "OFF" or token == "0" then
       return false
    end
 
