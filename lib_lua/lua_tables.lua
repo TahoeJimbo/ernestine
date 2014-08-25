@@ -41,7 +41,7 @@ function table_private.dump_recursive(theTable, indent, output_func)
 
 	 if (key ~= "__index") then 
 	    output_func(indentString..key.." is a table:")
-	    table_private.dump_recursive(value, indent + 1)
+	    table_private.dump_recursive(value, indent + 1, output_func)
 	 else
 	    output_func(indentString..key.." is an __index table. Skipping.")
 	 end
