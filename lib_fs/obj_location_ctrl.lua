@@ -36,7 +36,7 @@ function Location_ctrl:new(config_table)
    end
 
    if DEBUG_LOCATION then 
-      table_dump("Location list", object.location_list)
+      table_dump("Location list", object.location_list, logInfo)
    end
 
    return object
@@ -73,16 +73,24 @@ g_location_parser_config = {
    { group_name = "Location", keywords = { "extension", "location" } }
 }
 
-                                                             --[[ LOCATION_CTRL:GET ]]--
-function Location_ctrl:get(extension)
-
-   if self.location_data[extension] then
-      return self.location_data[extension].location;
+                                                --[[ LOCATION_CTRL:GET_USER_LOCATION ]]--
+function Location_ctrl:get_user_location(vm_box)
+   if DEBUG_LOCATION then 
+      logInfo("Getting user location at box <"..vm_box..">")
    end
+   local user_loc_id = self.location_data[vm_box]
 
+   if user_loc_id then
+      if DEBUG_LOCATION then 
+	 logInfo("Location for user <"..vm_box.."> is <"..user_loc_id..">")
+      end
+   else
+      logError("Could find location for <"..vm_box..">")
+   end
+   return user_loc_id
 end
 
-function Location_ctrl:set(extension, location_id)
+function Location_ctrl:set_user_location(extension, location_id)
    self.location_data[extension] = location_id
    self:save()
 end
@@ -99,6 +107,19 @@ function Location_ctrl:load()                                --[[ LOCATION_CTRL:
       if location_parser == nil then
 	 logError("Could not read location file.")
       else
+	 local config_pairs = location_parser.config_array
+
+	 for _, group in ipairs(config_pairs) do
+	    if group.group_name == "Location" then
+		   local key = group.items.extension
+		   local value = group.items.location
+
+		   self.location_data[key] = value
+	    end
+	 end
+	 if DEBUG_LOCATION then 
+	    table_dump("Location user table:", self.location_data, logInfo)
+	 end
 	 return "OK"
       end
    end

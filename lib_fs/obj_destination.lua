@@ -453,17 +453,23 @@ function Destination:PRIV_is_at_location(args_string)
    --
 
    args = string_split(args_string, ",")
-   if #args ~= 3 then return "FAILED"; end
+
+   if #args ~= 3 then
+      logError("Syntax error processing args <"..args_string..">")
+      return "FAILED";
+   end
 
    local vm_box = args[1]
    local location = args[2]
 
-   local location_obj = gLocations:get(vm_box)
-
-   if location_obj then
-      if location == location_obj.get_id() then
+   local location_id = gLocations:get_user_location(vm_box)
+   
+   if location_id then
+      if location == location_id then
 	 return args[3]
       end
+   else
+      if DEBUG_DESTINATION then logInfo("Location <"..vm_box.."> not found"); end
    end
 
    return nil

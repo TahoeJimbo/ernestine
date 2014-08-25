@@ -58,7 +58,7 @@ function route_call_from_internal(source_obj, destination_digits)
 	    local confirmation_message = location:get_confirmation_msg()
 	    local id = location:get_id()
 
-	    gLocations:set(location_box, id)
+	    gLocations:set_user_location(location_box, id)
 	    
 	    --
 	    -- Play the confirmation message if it exists...
