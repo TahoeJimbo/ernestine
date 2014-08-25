@@ -21,6 +21,7 @@ function Parser:new(file_name, parser_config)
 
    object.current_group_name = nil       -- Name of group being parsed.
    object.current_group_keyword = nil    -- Name of current keyword being parsed
+   object.current_group_kw_type = ""     -- Type of current keyword being parsed
    object.current_group_pairs = nil      -- The keyword pairs being built for current 
                                          -- group
 
@@ -43,6 +44,22 @@ function Parser:new(file_name, parser_config)
    return object, nil
 end
 
+--
+-- Returns the keyword, and any associated type with the keyword. "" is returned
+-- for the default type.
+--
+-- returns (keyword, type)
+--
+function Parser:get_name_and_type(keyword)
+
+   local kw, kw_type = keyword:match("^([A-Za-z_]+):([a-z]+)$")
+
+   if kw == nil then
+      return keyword, ""
+   end
+
+   return kw, kw_type
+end
 
 function Parser:PRIV_index_grammar()
 
@@ -53,33 +70,16 @@ function Parser:PRIV_index_grammar()
       local group_table = {}
 
       for _, keyword in ipairs(conf_entry.keywords) do
-	 group_table[keyword] = 1
+
+	 local kw, kw_type = self:get_name_and_type(keyword)
+	 print(kw, kw_type)
+
+	 group_table[kw] = kw_type
       end
 
       self.parse_index[group_name] = group_table
    end
 end
-
-
-function parse_true_false(token)
-
-   if token == nil then return nil; end
-
-   if type(token) == "boolean" then return token; end
-
-   local token = token:upper()
-
-   if token == "YES" or token == "TRUE" or token == "1" then
-      return true
-   end
-
-   if token == "NO" or token == "FALSE" or token == "0" then
-      return false
-   end
-
-   return nil
-end
-
 
 --
 -- Load the file and lightly parse the basic structure, ensuring balanced
@@ -190,10 +190,12 @@ function Parser:expecting_keyword(token)
 
       self.config_array[#self.config_array + 1] = config_entry
 
+      self.current_group_type = nil
       self.current_group_name = nil
       self.current_group_pairs = nil
       self.current_group_index = nil
       self.current_group_pairs = nil
+      self.current_group_kw_type = nil
 
       return kParseStateWantGroup, nil
    end
@@ -208,6 +210,7 @@ function Parser:expecting_keyword(token)
 
    if self.current_group_index[token] ~= nil then
       self.current_group_keyword = token
+      self.current_group_kw_type = self.current_group_index[token]
       self.current_group_index[token] = ""
       return kParseStateWantEqual, nil
    end
@@ -238,6 +241,24 @@ function Parser:expecting_quoted_string(token)
    local current_pair_value = self.current_group_pairs[self.current_group_keyword] or ""
    current_pair_value = current_pair_value..unquoted_string
    self.current_group_pairs[self.current_group_keyword] = current_pair_value
+
+   --
+   -- Process any type info on the keyword.  This *turns off* the "+" line continuation
+   -- fature causing a syntax error of it is used on typed keywords.
+   --
+
+   if self.current_group_kw_type == "boolean" then
+      local kw_value = self.current_group_pairs[self.current_group_keyword]
+
+      kw_boolean = string_parse_true_false(kw_value)
+
+      if kw_boolean ~= nil then
+	 self.current_group_pairs[self.current_group_keyword] = kw_boolean
+      else
+	 return nil, "Boolean value can be one of yes, true, 1, no, false 0, not <"
+	    ..kw_value..">"
+      end
+   end
 
    return kParseStateWantKeyword, nil
 end

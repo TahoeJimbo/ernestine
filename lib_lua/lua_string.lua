@@ -39,3 +39,23 @@ function string_split(str, delimiter)
 
    return results;
 end
+
+
+function string_parse_true_false(token)
+
+   if token == nil then return nil; end
+
+   if type(token) == "boolean" then return token; end
+
+   local token = token:upper()
+
+   if token == "YES" or token == "TRUE" or token == "1" then
+      return true
+   end
+
+   if token == "NO" or token == "FALSE" or token == "0" then
+      return false
+   end
+
+   return nil
+end
